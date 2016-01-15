@@ -23,6 +23,7 @@ function (_) {
       {text: "Terms",           value: 'terms' },
       {text: "Filters",         value: 'filters' },
       {text: "Date Histogram",  value: 'date_histogram' },
+      {text: "Term Histogram",  value: 'terms_histogram' },
     ],
 
     orderByOptions: [
