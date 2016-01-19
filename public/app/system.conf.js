@@ -20,7 +20,6 @@ System.config({
     "jquery.flot.pie": "vendor/flot/jquery.flot.pie",
     "jquery.flot.events": "vendor/flot/jquery.flot.events",
     "jquery.flot.selection": "vendor/flot/jquery.flot.selection",
-    "jquery.flot.orderBars": "vendor/flot/jquery.flot.orderBars",
     "jquery.flot.stack": "vendor/flot/jquery.flot.stack",
     "jquery.flot.stackpercent": "vendor/flot/jquery.flot.stackpercent",
     "jquery.flot.time": "vendor/flot/jquery.flot.time",
