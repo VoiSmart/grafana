@@ -6,6 +6,8 @@ import moment from 'moment';
 import PanelMeta from 'app/features/panel/panel_meta2';
 import {transformDataToTable} from './transformers';
 
+declare var window;
+
 export class TablePanelCtrl {
 
   /** @ngInject */
@@ -22,6 +24,8 @@ export class TablePanelCtrl {
 
     $scope.panelMeta.addEditorTab('Options', 'app/plugins/panel/table/options.html');
     $scope.panelMeta.addEditorTab('Time range', 'app/features/panel/partials/panelTime.html');
+
+    $scope.panelMeta.addExtendedMenuItem('Export CSV', '', 'exportCsv()');
 
     var panelDefaults = {
       targets: [{}],
@@ -122,6 +126,25 @@ export class TablePanelCtrl {
       $scope.table = transformDataToTable($scope.dataRaw, $scope.panel);
       $scope.table.sort($scope.panel.sort);
       panelHelper.broadcastRender($scope, $scope.table, $scope.dataRaw);
+    };
+
+    $scope.exportCsv = function() {
+      var text = '';
+      // add header
+      _.each($scope.table.columns, function(column) {
+          text += column.text + ';';
+      });
+      text += '\n';
+      // process data
+      _.each($scope.table.rows, function(row) {
+        _.each(row, function(value) {
+          text += value + ';';
+        });
+        text += '\n';
+      });
+
+      var blob = new Blob([text], { type: "text/csv;charset=utf-8" });
+      window.saveAs(blob, 'grafana_data_export.csv');
     };
 
     $scope.init();
