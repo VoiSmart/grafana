@@ -3,6 +3,7 @@
 import angular from 'angular';
 import _ from 'lodash';
 import moment from 'moment';
+import kbn from 'app/core/utils/kbn';
 import PanelMeta from 'app/features/panel/panel_meta2';
 import {transformDataToTable} from './transformers';
 
@@ -129,22 +130,7 @@ export class TablePanelCtrl {
     };
 
     $scope.exportCsv = function() {
-      var text = '';
-      // add header
-      _.each($scope.table.columns, function(column) {
-          text += column.text + ';';
-      });
-      text += '\n';
-      // process data
-      _.each($scope.table.rows, function(row) {
-        _.each(row, function(value) {
-          text += value + ';';
-        });
-        text += '\n';
-      });
-
-      var blob = new Blob([text], { type: "text/csv;charset=utf-8" });
-      window.saveAs(blob, 'grafana_data_export.csv');
+      kbn.exportTableDataToCsv($scope.table);
     };
 
     $scope.init();
