@@ -2,6 +2,11 @@ package plugins
 
 import (
 	"encoding/json"
+	"errors"
+	"strings"
+
+	"github.com/grafana/grafana/pkg/log"
+	"github.com/grafana/grafana/pkg/setting"
 )
 
 type PluginLoader interface {
@@ -18,13 +23,28 @@ type PluginBase struct {
 	PluginDir       string `json:"-"`
 }
 
+func (pb *PluginBase) registerPlugin(pluginDir string) error {
+	if _, exists := Plugins[pb.Id]; exists {
+		return errors.New("Plugin with same id already exists")
+	}
+
+	if !strings.HasPrefix(pluginDir, setting.StaticRootPath) {
+		log.Info("Plugins: Registering plugin %v", pb.Name)
+	}
+
+	pb.PluginDir = pluginDir
+	Plugins[pb.Id] = pb
+	return nil
+}
+
 type PluginInfo struct {
-	Author      PluginInfoLink   `json:"author"`
-	Description string           `json:"description"`
-	Links       []PluginInfoLink `json:"links"`
-	Logos       PluginLogos      `json:"logos"`
-	Version     string           `json:"version"`
-	Updated     string           `json:"updated"`
+	Author      PluginInfoLink      `json:"author"`
+	Description string              `json:"description"`
+	Links       []PluginInfoLink    `json:"links"`
+	Logos       PluginLogos         `json:"logos"`
+	Screenshots []PluginScreenshots `json:"screenshots"`
+	Version     string              `json:"version"`
+	Updated     string              `json:"updated"`
 }
 
 type PluginInfoLink struct {
@@ -37,6 +57,11 @@ type PluginLogos struct {
 	Large string `json:"large"`
 }
 
+type PluginScreenshots struct {
+	Path string `json:"path"`
+	Name string `json:"name"`
+}
+
 type PluginStaticRoute struct {
 	Directory string
 	PluginId  string
@@ -45,7 +70,6 @@ type PluginStaticRoute struct {
 type EnabledPlugins struct {
 	Panels      []*PanelPlugin
 	DataSources map[string]*DataSourcePlugin
-	ApiList     []*ApiPlugin
 	Apps        []*AppPlugin
 }
 
@@ -53,7 +77,6 @@ func NewEnabledPlugins() EnabledPlugins {
 	return EnabledPlugins{
 		Panels:      make([]*PanelPlugin, 0),
 		DataSources: make(map[string]*DataSourcePlugin),
-		ApiList:     make([]*ApiPlugin, 0),
 		Apps:        make([]*AppPlugin, 0),
 	}
 }

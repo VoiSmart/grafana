@@ -5,10 +5,13 @@ import (
 
 	"github.com/grafana/grafana/pkg/bus"
 	m "github.com/grafana/grafana/pkg/models"
+	"github.com/grafana/grafana/pkg/setting"
+	"github.com/grafana/grafana/pkg/util"
 )
 
 func init() {
 	bus.AddHandler("sql", GetAppSettings)
+	bus.AddHandler("sql", GetAppSettingByAppId)
 	bus.AddHandler("sql", UpdateAppSettings)
 }
 
@@ -17,6 +20,18 @@ func GetAppSettings(query *m.GetAppSettingsQuery) error {
 
 	query.Result = make([]*m.AppSettings, 0)
 	return sess.Find(&query.Result)
+}
+
+func GetAppSettingByAppId(query *m.GetAppSettingByAppIdQuery) error {
+	appSetting := m.AppSettings{OrgId: query.OrgId, AppId: query.AppId}
+	has, err := x.Get(&appSetting)
+	if err != nil {
+		return err
+	} else if has == false {
+		return m.ErrAppSettingNotFound
+	}
+	query.Result = &appSetting
+	return nil
 }
 
 func UpdateAppSettings(cmd *m.UpdateAppSettingsCmd) error {
@@ -28,17 +43,22 @@ func UpdateAppSettings(cmd *m.UpdateAppSettingsCmd) error {
 		sess.UseBool("pinned")
 		if !exists {
 			app = m.AppSettings{
-				AppId:    cmd.AppId,
-				OrgId:    cmd.OrgId,
-				Enabled:  cmd.Enabled,
-				Pinned:   cmd.Pinned,
-				JsonData: cmd.JsonData,
-				Created:  time.Now(),
-				Updated:  time.Now(),
+				AppId:          cmd.AppId,
+				OrgId:          cmd.OrgId,
+				Enabled:        cmd.Enabled,
+				Pinned:         cmd.Pinned,
+				JsonData:       cmd.JsonData,
+				SecureJsonData: cmd.GetEncryptedJsonData(),
+				Created:        time.Now(),
+				Updated:        time.Now(),
 			}
 			_, err = sess.Insert(&app)
 			return err
 		} else {
+			for key, data := range cmd.SecureJsonData {
+				app.SecureJsonData[key] = util.Encrypt([]byte(data), setting.SecretKey)
+			}
+			app.SecureJsonData = cmd.GetEncryptedJsonData()
 			app.Updated = time.Now()
 			app.Enabled = cmd.Enabled
 			app.JsonData = cmd.JsonData

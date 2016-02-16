@@ -16,15 +16,20 @@ export class SideMenuCtrl {
   appSubUrl: string;
 
   /** @ngInject */
-  constructor(private $scope, private $location, private contextSrv, private backendSrv) {
+  constructor(private $scope, private $location, private contextSrv, private backendSrv, private $element) {
     this.isSignedIn = contextSrv.isSignedIn;
     this.user = contextSrv.user;
     this.appSubUrl = config.appSubUrl;
     this.showSignout = this.contextSrv.isSignedIn && !config['authProxyEnabled'];
     this.updateMenu();
+
     this.$scope.$on('$routeChangeSuccess', () => {
-      this.contextSrv.sidemenu = false;
+      this.updateMenu();
+      if (!this.contextSrv.pinned) {
+        this.contextSrv.sidemenu = false;
+      }
     });
+
   }
 
  getUrl(url) {
@@ -32,9 +37,7 @@ export class SideMenuCtrl {
  }
 
  setupMainNav() {
-   this.mainLinks = config.bootData.mainNavLinks.map(item => {
-     return {text: item.text, icon: item.icon, img: item.img, url: this.getUrl(item.url)};
-   });
+   this.mainLinks = config.bootData.mainNavLinks;
  }
 
  openUserDropdown() {
@@ -83,11 +86,11 @@ export class SideMenuCtrl {
            this.switchOrg(org.orgId);
          }
        });
-
-       if (config.allowOrgCreate) {
-         this.orgMenu.push({text: "New organization", icon: "fa fa-fw fa-plus", url: this.getUrl('/org/new')});
-       }
      });
+
+     if (config.allowOrgCreate) {
+       this.orgMenu.push({text: "New organization", icon: "fa fa-fw fa-plus", url: this.getUrl('/org/new')});
+     }
    });
  }
 
@@ -108,16 +111,23 @@ export class SideMenuCtrl {
    });
 
    this.mainLinks.push({
-     text: "Global Users",
+     text: "Stats",
+     icon: "fa fa-fw fa-bar-chart",
+     url: this.getUrl("/admin/stats"),
+   });
+
+   this.mainLinks.push({
+     text: "Users",
      icon: "fa fa-fw fa-user",
      url: this.getUrl("/admin/users"),
    });
 
    this.mainLinks.push({
-     text: "Global Orgs",
+     text: "Organizations",
      icon: "fa fa-fw fa-users",
      url: this.getUrl("/admin/orgs"),
    });
+
  }
 
  updateMenu() {
@@ -137,7 +147,7 @@ export class SideMenuCtrl {
 export function sideMenuDirective() {
   return {
     restrict: 'E',
-    templateUrl: 'app/core/components/sidemenu/sidemenu.html',
+    templateUrl: 'public/app/core/components/sidemenu/sidemenu.html',
     controller: SideMenuCtrl,
     bindToController: true,
     controllerAs: 'ctrl',

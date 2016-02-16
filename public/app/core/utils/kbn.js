@@ -179,38 +179,6 @@ function($, _) {
       .replace(/ +/g,'-');
   };
 
-  kbn.exportSeriesListToCsv = function(seriesList) {
-    var text = 'Series;Time;Value\n';
-    _.each(seriesList, function(series) {
-      _.each(series.datapoints, function(dp) {
-        text += series.alias + ';' + new Date(dp[1]).toISOString() + ';' + dp[0] + '\n';
-      });
-    });
-    kbn.saveSaveBlob(text, 'grafana_data_export.csv');
-  };
-
-  kbn.exportTableDataToCsv = function(table) {
-    var text = '';
-    // add header
-    _.each(table.columns, function(column) {
-      text += column.text + ';';
-    });
-    text += '\n';
-    // process data
-    _.each(table.rows, function(row) {
-      _.each(row, function(value) {
-        text += value + ';';
-      });
-      text += '\n';
-    });
-    kbn.saveSaveBlob(text, 'grafana_data_export.csv');
-  };
-
-  kbn.saveSaveBlob = function(payload, fname) {
-    var blob = new Blob([payload], { type: "text/csv;charset=utf-8" });
-    window.saveAs(blob, fname);
-  };
-
   kbn.stringToJsRegex = function(str) {
     if (str[0] !== '/') {
       return new RegExp('^' + str + '$');
@@ -390,14 +358,17 @@ function($, _) {
   kbn.valueFormats.iops = kbn.formatBuilders.simpleCountUnit('iops');
 
   // Energy
-  kbn.valueFormats.watt   = kbn.formatBuilders.decimalSIPrefix('W');
-  kbn.valueFormats.kwatt  = kbn.formatBuilders.decimalSIPrefix('W', 1);
-  kbn.valueFormats.watth  = kbn.formatBuilders.decimalSIPrefix('Wh');
-  kbn.valueFormats.kwatth = kbn.formatBuilders.decimalSIPrefix('Wh', 1);
-  kbn.valueFormats.joule  = kbn.formatBuilders.decimalSIPrefix('J');
-  kbn.valueFormats.ev     = kbn.formatBuilders.decimalSIPrefix('eV');
-  kbn.valueFormats.amp    = kbn.formatBuilders.decimalSIPrefix('A');
-  kbn.valueFormats.volt   = kbn.formatBuilders.decimalSIPrefix('V');
+  kbn.valueFormats.watt         = kbn.formatBuilders.decimalSIPrefix('W');
+  kbn.valueFormats.kwatt        = kbn.formatBuilders.decimalSIPrefix('W', 1);
+  kbn.valueFormats.voltamp      = kbn.formatBuilders.decimalSIPrefix('VA');
+  kbn.valueFormats.kvoltamp     = kbn.formatBuilders.decimalSIPrefix('VA', 1);
+  kbn.valueFormats.voltampreact = kbn.formatBuilders.decimalSIPrefix('var');
+  kbn.valueFormats.watth        = kbn.formatBuilders.decimalSIPrefix('Wh');
+  kbn.valueFormats.kwatth       = kbn.formatBuilders.decimalSIPrefix('Wh', 1);
+  kbn.valueFormats.joule        = kbn.formatBuilders.decimalSIPrefix('J');
+  kbn.valueFormats.ev           = kbn.formatBuilders.decimalSIPrefix('eV');
+  kbn.valueFormats.amp          = kbn.formatBuilders.decimalSIPrefix('A');
+  kbn.valueFormats.volt         = kbn.formatBuilders.decimalSIPrefix('V');
 
   // Temperature
   kbn.valueFormats.celsius   = kbn.formatBuilders.fixedUnit('°C');
@@ -668,14 +639,17 @@ function($, _) {
       {
         text: 'energy',
         submenu: [
-          {text: 'watt (W)',            value: 'watt'  },
-          {text: 'kilowatt (kW)',       value: 'kwatt' },
-          {text: 'watt-hour (Wh)',      value: 'watth' },
-          {text: 'kilowatt-hour (kWh)', value: 'kwatth'},
-          {text: 'joule (J)',           value: 'joule' },
-          {text: 'electron volt (eV)',  value: 'ev'    },
-          {text: 'Ampere (A)',          value: 'amp'   },
-          {text: 'Volt (V)',            value: 'volt'  },
+          {text: 'watt (W)',                   value: 'watt'        },
+          {text: 'kilowatt (kW)',              value: 'kwatt'       },
+          {text: 'volt-ampere (VA)',           value: 'voltamp'     },
+          {text: 'kilovolt-ampere (kVA)',      value: 'kvoltamp'    },
+          {text: 'volt-ampere reactive (var)', value: 'voltampreact'},
+          {text: 'watt-hour (Wh)',             value: 'watth'       },
+          {text: 'kilowatt-hour (kWh)',        value: 'kwatth'      },
+          {text: 'joule (J)',                  value: 'joule'       },
+          {text: 'electron volt (eV)',         value: 'ev'          },
+          {text: 'Ampere (A)',                 value: 'amp'         },
+          {text: 'Volt (V)',                   value: 'volt'        },
         ]
       },
       {

@@ -3,16 +3,16 @@
 }
 
 .sidemenu-wrapper {
-  position: fixed;
-  top: 53px;
-  bottom: 0;
+  position: absolute;
+  top: 52px;
   left: 0;
   width: 200px;
   background-color: @sideMenuBackground;
   border: @sideMenuBorder;
-  min-height: 100%;
   z-index: 101;
-  transform: translate3d(-100%, 0, 0);
+  transform: translate3d(0, -100%, 0);
+  visibility: hidden;
+  box-shadow: @sideMenuShadow;
 
   a:focus {
     text-decoration: none;
@@ -22,9 +22,37 @@
 .sidemenu-open {
   .sidemenu-wrapper {
     visibility: visible;
-    -webkit-transform: translate3d(0, 0, 0);
     transform: translate3d(0, 0, 0);
     transition: all 0.2s;
+  }
+}
+
+.sidemenu-pinned {
+  .sidemenu-wrapper {
+    min-height: 100%;
+  }
+  .main-view-container {
+    padding-left: 210px;
+  }
+  .page-container {
+    margin-left: 210px;
+    padding-left: 55px;
+  }
+  .top-nav-menu-btn {
+    a {
+      background-color: @sideMenuBackground;
+      padding-right: 54px;
+      padding-left: 16px;
+    }
+    .icon-gf-grafana_wordmark  {
+      display: inline-block;
+    }
+    .fa {
+      display: none;
+    }
+  }
+  .sidemenu-org {
+    box-shadow: none;
   }
 }
 
@@ -60,6 +88,7 @@
   vertical-align: middle;
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .icon-circle {
@@ -83,9 +112,8 @@
 .sidemenu-item {
   color: @linkColor;
   line-height: 47px;
-  padding: 0px 10px 0px 20px;
+  padding: 0px 10px 0px 10px;
   display: block;
-  white-space: nowrap;
 
   &:hover {
     background-color: @sideMenuBackgroundHighlight;
@@ -164,8 +192,8 @@
 
 .sidemenu-org {
   border-bottom: @sideMenuBorder;
-  box-shadow: @sideMenuTopShadow;
-  padding: 17px 10px 15px 21px;
+  border-top: @sideMenuBorder;
+  padding: 17px 10px 15px 14px;
   box-sizing: border-box;
   cursor: pointer;
   &:hover {
