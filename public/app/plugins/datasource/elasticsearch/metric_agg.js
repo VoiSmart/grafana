@@ -67,6 +67,22 @@ function (angular, _, queryDef) {
         $scope.agg.field = 'select field';
       }
 
+      if (queryDef.isComplexPipelineAgg($scope.agg.type)) {
+        $scope.agg.values = $scope.agg.values || 'select metric';
+        $scope.agg.weights = $scope.agg.weights || 'select metric';
+        $scope.agg.field = $scope.agg.values;
+
+        /*var pipelineOptions = queryDef.getPipelineOptions($scope.agg);
+        if (pipelineOptions.length > 0) {
+          _.each(pipelineOptions, function(opt) {
+            $scope.agg.settings[opt.text] = $scope.agg.settings[opt.text] || opt.default;
+          });
+          $scope.settingsLinkText = 'Options';
+        }*/
+      } else if (!$scope.agg.field) {
+        $scope.agg.field = 'select field';
+      }
+
       switch($scope.agg.type) {
         case 'percentiles': {
           $scope.agg.settings.percents = $scope.agg.settings.percents || [25,50,75,95,99];

@@ -15,6 +15,7 @@ function (_) {
       {text: "Percentiles",  value: 'percentiles', requiresField: true, supportsMissing: true, supportsInlineScript: true},
       {text: "Unique Count", value: "cardinality", requiresField: true, supportsMissing: true},
       {text: "Moving Average",  value: 'moving_avg', requiresField: false, isPipelineAgg: true, minVersion: 2},
+      {text: "Weighted Avg",  value: 'bucket_script', requiresField: false, isComplexPipelineAgg: true, minVersion: 2},
       {text: "Derivative",  value: 'derivative', requiresField: false, isPipelineAgg: true, minVersion: 2 },
       {text: "Raw Document", value: "raw_document", requiresField: false}
     ],
@@ -57,6 +58,11 @@ function (_) {
       {text: 'Std Dev Lower', value: 'std_deviation_bounds_lower'},
     ],
 
+    complexOptions: [
+      {text: '_1', value: '_1'},
+      {text: '_2', value: 'min'}
+    ],
+
     intervalOptions: [
       {text: 'auto', value: 'auto'},
       {text: '10s', value: '10s'},
@@ -76,6 +82,10 @@ function (_) {
       'derivative': [
         {text: 'unit', default: undefined},
       ]
+    },
+
+    complexPipelineOptions: {
+      'bucket_script': true
     },
 
     getMetricAggTypes: function(esVersion) {
@@ -110,6 +120,35 @@ function (_) {
       var result = [];
       _.each(targets.metrics, function(metric) {
         if (!self.isPipelineAgg(metric.type)) {
+          result.push({text: self.describeMetric(metric), value: metric.id });
+        }
+      });
+
+      return result;
+    },
+
+    getComplexPipelineOptions: function(metric) {
+      if (!this.isComplexPipelineAgg(metric.type)) {
+        return [];
+      }
+
+      return this.comlexPipelineOptions[metric.type];
+    },
+
+    isComplexPipelineAgg: function(metricType) {
+      if (metricType) {
+        var po = this.complexPipelineOptions[metricType];
+        return po !== null && po !== undefined;
+      }
+
+      return false;
+    },
+
+    getComplexPipelineAggOptions: function(targets) {
+      var self = this;
+      var result = [];
+      _.each(targets.metrics, function(metric) {
+        if (!self.isComplexPipelineAgg(metric.type)) {
           result.push({text: self.describeMetric(metric), value: metric.id });
         }
       });
