@@ -15,7 +15,7 @@ function (_) {
       {text: "Percentiles",  value: 'percentiles', requiresField: true, supportsMissing: true, supportsInlineScript: true},
       {text: "Unique Count", value: "cardinality", requiresField: true, supportsMissing: true},
       {text: "Moving Average",  value: 'moving_avg', requiresField: false, isPipelineAgg: true, minVersion: 2},
-      {text: "Weighted Avg",  value: 'bucket_script', requiresField: false, isComplexPipelineAgg: true, minVersion: 2},
+      {text: "Bucket Scr",  value: 'bucket_script', requiresField: false, isComplexPipelineAgg: true, minVersion: 2},
       {text: "Derivative",  value: 'derivative', requiresField: false, isPipelineAgg: true, minVersion: 2 },
       {text: "Raw Document", value: "raw_document", requiresField: false}
     ],
@@ -80,12 +80,14 @@ function (_) {
         {text: 'model', default: 'simple'}
       ],
       'derivative': [
-        {text: 'unit', default: undefined},
+        {text: 'unit', default: undefined}
       ]
     },
 
     complexPipelineOptions: {
-      'bucket_script': true
+      'bucket_script': [
+        {text: 'script', default: '_1 OP _2'}
+      ]
     },
 
     getMetricAggTypes: function(esVersion) {
@@ -132,7 +134,7 @@ function (_) {
         return [];
       }
 
-      return this.comlexPipelineOptions[metric.type];
+      return this.complexPipelineOptions[metric.type];
     },
 
     isComplexPipelineAgg: function(metricType) {
