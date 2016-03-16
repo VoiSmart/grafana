@@ -177,6 +177,13 @@ function (queryDef) {
         } else {
           continue;
         }
+      } else if (queryDef.isComplexPipelineAgg(metric.type)) {
+        if (metric.values && /^\d*$/.test(metric.values) &&
+            metric.weights && /^\d*$/.test(metric.weights)) {
+          metricAgg = { buckets_path: { "_1": metric.values, "_2": metric.weights } };
+        } else {
+          continue;
+        }
       } else {
         metricAgg = {field: metric.field};
       }
