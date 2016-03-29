@@ -2,7 +2,7 @@
 ///<reference path="./mod_defs.d.ts" />
 
 import "./directives/annotation_tooltip";
-import "./directives/body_class";
+import "./directives/dash_class";
 import "./directives/confirm_click";
 import "./directives/dash_edit_link";
 import "./directives/dash_upload";
@@ -24,12 +24,34 @@ import './partials';
 import {grafanaAppDirective} from './components/grafana_app';
 import {sideMenuDirective} from './components/sidemenu/sidemenu';
 import {searchDirective} from './components/search/search';
+import {infoPopover} from './components/info_popover';
+import {colorPicker} from './components/colorpicker';
 import {navbarDirective} from './components/navbar/navbar';
 import {arrayJoin} from './directives/array_join';
+import {liveSrv} from './live/live_srv';
+import {Emitter} from './utils/emitter';
+import {layoutSelector} from './components/layout_selector/layout_selector';
+import {switchDirective} from './components/switch';
 import 'app/core/controllers/all';
 import 'app/core/services/all';
 import 'app/core/routes/routes';
 import './filters/filters';
 import coreModule from './core_module';
+import appEvents from './app_events';
 
-export {arrayJoin, coreModule, grafanaAppDirective, sideMenuDirective, navbarDirective, searchDirective};
+
+export {
+  arrayJoin,
+  coreModule,
+  grafanaAppDirective,
+  sideMenuDirective,
+  navbarDirective,
+  searchDirective,
+  colorPicker,
+  liveSrv,
+  layoutSelector,
+  switchDirective,
+  infoPopover,
+  Emitter,
+  appEvents,
+};

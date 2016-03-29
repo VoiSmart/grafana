@@ -47,15 +47,15 @@ function (angular, _, moment, kbn, ElasticQueryBuilder, IndexPattern, ElasticRes
     };
 
     this._get = function(url) {
-      return this._request('GET', this.indexPattern.getIndexForToday() + url)
-      .then(function(results) {
+      return this._request('GET', this.indexPattern.getIndexForToday() + url).then(function(results) {
+        results.data.$$config = results.config;
         return results.data;
       });
     };
 
     this._post = function(url, data) {
-      return this._request('POST', url, data)
-      .then(function(results) {
+      return this._request('POST', url, data).then(function(results) {
+        results.data.$$config = results.config;
         return results.data;
       });
     };
@@ -73,6 +73,10 @@ function (angular, _, moment, kbn, ElasticQueryBuilder, IndexPattern, ElasticRes
         from: options.range.from.valueOf(),
         to: options.range.to.valueOf(),
       };
+
+      if (this.esVersion >= 2) {
+        range[timeField]["format"] = "epoch_millis";
+      }
 
       var queryInterpolated = templateSrv.replace(queryString);
       var filter = { "bool": { "must": [{ "range": range }] } };
@@ -170,7 +174,10 @@ function (angular, _, moment, kbn, ElasticQueryBuilder, IndexPattern, ElasticRes
 
         var queryObj = this.queryBuilder.build(target);
         var esQuery = angular.toJson(queryObj);
-        var luceneQuery = angular.toJson(target.query || '*');
+        var luceneQuery = target.query || '*';
+        luceneQuery = templateSrv.replace(luceneQuery, options.scopedVars, 'lucene');
+        luceneQuery = angular.toJson(luceneQuery);
+
         // remove inner quotes
         luceneQuery = luceneQuery.substr(1, luceneQuery.length - 2);
         esQuery = esQuery.replace("$lucene_query", luceneQuery);
