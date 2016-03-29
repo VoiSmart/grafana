@@ -11,52 +11,60 @@ function setupAngularRoutes($routeProvider, $locationProvider) {
   $locationProvider.html5Mode(true);
 
   var loadOrgBundle = new BundleLoader('app/features/org/all');
-  var loadAppsBundle = new BundleLoader('app/features/apps/all');
+  var loadPluginsBundle = new BundleLoader('app/features/plugins/all');
+  var loadAdminBundle = new BundleLoader('app/features/admin/admin');
 
   $routeProvider
   .when('/', {
     templateUrl: 'public/app/partials/dashboard.html',
     controller : 'LoadDashboardCtrl',
     reloadOnSearch: false,
+    pageClass: 'page-dashboard',
   })
   .when('/dashboard/:type/:slug', {
     templateUrl: 'public/app/partials/dashboard.html',
     controller : 'LoadDashboardCtrl',
     reloadOnSearch: false,
+    pageClass: 'page-dashboard',
   })
   .when('/dashboard-solo/:type/:slug', {
     templateUrl: 'public/app/features/panel/partials/soloPanel.html',
     controller : 'SoloPanelCtrl',
+    pageClass: 'page-dashboard',
   })
   .when('/dashboard-import/:file', {
     templateUrl: 'public/app/partials/dashboard.html',
     controller : 'DashFromImportCtrl',
     reloadOnSearch: false,
+    pageClass: 'page-dashboard',
   })
   .when('/dashboard/new', {
     templateUrl: 'public/app/partials/dashboard.html',
     controller : 'NewDashboardCtrl',
     reloadOnSearch: false,
+    pageClass: 'page-dashboard',
   })
   .when('/import/dashboard', {
     templateUrl: 'public/app/features/dashboard/partials/import.html',
     controller : 'DashboardImportCtrl',
   })
   .when('/datasources', {
-    templateUrl: 'public/app/features/datasources/partials/list.html',
+    templateUrl: 'public/app/features/plugins/partials/ds_list.html',
     controller : 'DataSourcesCtrl',
     controllerAs: 'ctrl',
-    resolve: loadOrgBundle,
+    resolve: loadPluginsBundle,
   })
   .when('/datasources/edit/:id', {
-    templateUrl: 'public/app/features/datasources/partials/edit.html',
+    templateUrl: 'public/app/features/plugins/partials/ds_edit.html',
     controller : 'DataSourceEditCtrl',
-    resolve: loadOrgBundle,
+    controllerAs: 'ctrl',
+    resolve: loadPluginsBundle,
   })
   .when('/datasources/new', {
-    templateUrl: 'public/app/features/datasources/partials/edit.html',
+    templateUrl: 'public/app/features/plugins/partials/ds_edit.html',
     controller : 'DataSourceEditCtrl',
-    resolve: loadOrgBundle,
+    controllerAs: 'ctrl',
+    resolve: loadPluginsBundle,
   })
   .when('/org', {
     templateUrl: 'public/app/features/org/partials/orgDetails.html',
@@ -71,6 +79,7 @@ function setupAngularRoutes($routeProvider, $locationProvider) {
   .when('/org/users', {
     templateUrl: 'public/app/features/org/partials/orgUsers.html',
     controller : 'OrgUsersCtrl',
+    controllerAs: 'ctrl',
     resolve: loadOrgBundle,
   })
   .when('/org/apikeys', {
@@ -90,35 +99,49 @@ function setupAngularRoutes($routeProvider, $locationProvider) {
     templateUrl: 'public/app/features/profile/partials/select_org.html',
     controller : 'SelectOrgCtrl',
   })
+  // ADMIN
+  .when('/admin', {
+    templateUrl: 'public/app/features/admin/partials/admin_home.html',
+    controller : 'AdminHomeCtrl',
+    resolve: loadAdminBundle,
+  })
   .when('/admin/settings', {
     templateUrl: 'public/app/features/admin/partials/settings.html',
     controller : 'AdminSettingsCtrl',
+    resolve: loadAdminBundle,
   })
   .when('/admin/users', {
     templateUrl: 'public/app/features/admin/partials/users.html',
     controller : 'AdminListUsersCtrl',
+    resolve: loadAdminBundle,
   })
   .when('/admin/users/create', {
     templateUrl: 'public/app/features/admin/partials/new_user.html',
     controller : 'AdminEditUserCtrl',
+    resolve: loadAdminBundle,
   })
   .when('/admin/users/edit/:id', {
     templateUrl: 'public/app/features/admin/partials/edit_user.html',
     controller : 'AdminEditUserCtrl',
+    resolve: loadAdminBundle,
   })
   .when('/admin/orgs', {
     templateUrl: 'public/app/features/admin/partials/orgs.html',
     controller : 'AdminListOrgsCtrl',
+    resolve: loadAdminBundle,
   })
   .when('/admin/orgs/edit/:id', {
     templateUrl: 'public/app/features/admin/partials/edit_org.html',
     controller : 'AdminEditOrgCtrl',
+    resolve: loadAdminBundle,
   })
   .when('/admin/stats', {
     templateUrl: 'public/app/features/admin/partials/stats.html',
     controller : 'AdminStatsCtrl',
     controllerAs: 'ctrl',
+    resolve: loadAdminBundle,
   })
+  // LOGIN / SIGNUP
   .when('/login', {
     templateUrl: 'public/app/partials/login.html',
     controller : 'LoginCtrl',
@@ -144,26 +167,31 @@ function setupAngularRoutes($routeProvider, $locationProvider) {
     controller : 'SnapshotsCtrl',
     controllerAs: 'ctrl',
   })
-  .when('/apps', {
-    templateUrl: 'public/app/features/apps/partials/list.html',
-    controller: 'AppListCtrl',
+  .when('/plugins', {
+    templateUrl: 'public/app/features/plugins/partials/plugin_list.html',
+    controller: 'PluginListCtrl',
     controllerAs: 'ctrl',
-    resolve: loadAppsBundle,
+    resolve: loadPluginsBundle,
   })
-  .when('/apps/:appId/edit', {
-    templateUrl: 'public/app/features/apps/partials/edit.html',
-    controller: 'AppEditCtrl',
+  .when('/plugins/:pluginId/edit', {
+    templateUrl: 'public/app/features/plugins/partials/plugin_edit.html',
+    controller: 'PluginEditCtrl',
     controllerAs: 'ctrl',
-    resolve: loadAppsBundle,
+    resolve: loadPluginsBundle,
   })
-  .when('/apps/:appId/page/:slug', {
-    templateUrl: 'public/app/features/apps/partials/page.html',
+  .when('/plugins/:pluginId/page/:slug', {
+    templateUrl: 'public/app/features/plugins/partials/plugin_page.html',
     controller: 'AppPageCtrl',
     controllerAs: 'ctrl',
-    resolve: loadAppsBundle,
+    resolve: loadPluginsBundle,
   })
   .when('/global-alerts', {
     templateUrl: 'public/app/features/dashboard/partials/globalAlerts.html',
+  })
+  .when('/styleguide/:page?', {
+    controller: 'StyleGuideCtrl',
+    controllerAs: 'ctrl',
+    templateUrl: 'public/app/features/styleguide/styleguide.html',
   })
   .otherwise({
     templateUrl: 'public/app/partials/error.html',

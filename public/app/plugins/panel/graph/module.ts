@@ -2,8 +2,9 @@
 
 import './graph';
 import './legend';
-import './seriesOverridesCtrl';
+import './series_overrides_ctrl';
 
+import template from './template';
 import moment from 'moment';
 import kbn from 'app/core/utils/kbn';
 import _ from 'lodash';
@@ -69,6 +70,7 @@ var panelDefaults = {
   tooltip       : {
     value_type: 'cumulative',
     shared: true,
+    msResolution: false,
   },
   // time overrides
   timeFrom: null,
@@ -82,7 +84,7 @@ var panelDefaults = {
 };
 
 class GraphCtrl extends MetricsPanelCtrl {
-  static templateUrl = 'module.html';
+  static template = template;
 
   hiddenSeries: any = {};
   seriesList: any = [];
@@ -104,12 +106,15 @@ class GraphCtrl extends MetricsPanelCtrl {
     _.defaults(this.panel.legend, panelDefaults.legend);
 
     this.colors = $scope.$root.colors;
+
+    this.events.on('data-received', this.onDataReceived.bind(this));
+    this.events.on('data-error', this.onDataError.bind(this));
+    this.events.on('data-snapshot-load', this.onDataSnapshotLoad.bind(this));
+    this.events.on('init-edit-mode', this.onInitEditMode.bind(this));
+    this.events.on('init-panel-actions', this.onInitPanelActions.bind(this));
   }
 
-  initEditMode() {
-    super.initEditMode();
-
-    this.icon = "fa fa-bar-chart";
+  onInitEditMode() {
     this.addEditorTab('Axes & Grid', 'public/app/plugins/panel/graph/axisEditor.html', 2);
     this.addEditorTab('Display Styles', 'public/app/plugins/panel/graph/styleEditor.html', 3);
 
@@ -123,11 +128,10 @@ class GraphCtrl extends MetricsPanelCtrl {
     this.unitFormats = kbn.getUnitFormats();
   }
 
-  getExtendedMenu() {
-    var menu = super.getExtendedMenu();
-    menu.push({text: 'Export CSV', click: 'ctrl.exportCsv()'});
-    menu.push({text: 'Toggle legend', click: 'ctrl.toggleLegend()'});
-    return menu;
+  onInitPanelActions(actions) {
+    actions.push({text: 'Export CSV (series as rows)', click: 'ctrl.exportCsv()'});
+    actions.push({text: 'Export CSV (series as columns)', click: 'ctrl.exportCsvColumns()'});
+    actions.push({text: 'Toggle legend', click: 'ctrl.toggleLegend()'});
   }
 
   setUnitFormat(axis, subItem) {
@@ -135,38 +139,36 @@ class GraphCtrl extends MetricsPanelCtrl {
     this.render();
   }
 
-  refreshData(datasource) {
+  issueQueries(datasource) {
     this.annotationsPromise = this.annotationsSrv.getAnnotations(this.dashboard);
-
-    return this.issueQueries(datasource)
-    .then(res => this.dataHandler(res))
-    .catch(err => {
-      this.seriesList = [];
-      this.render([]);
-      throw err;
-    });
+    return super.issueQueries(datasource);
   }
 
   zoomOut(evt) {
     this.publishAppEvent('zoom-out', evt);
   }
 
-  loadSnapshot(snapshotData) {
+  onDataSnapshotLoad(snapshotData) {
     this.annotationsPromise = this.annotationsSrv.getAnnotations(this.dashboard);
-    this.dataHandler(snapshotData);
+    this.onDataReceived(snapshotData.data);
   }
 
-  dataHandler(results) {
+  onDataError(err) {
+    this.seriesList = [];
+    this.render([]);
+  }
+
+  onDataReceived(dataList) {
     // png renderer returns just a url
-    if (_.isString(results)) {
-      this.render(results);
+    if (_.isString(dataList)) {
+      this.render(dataList);
       return;
     }
 
     this.datapointsWarning = false;
     this.datapointsCount = 0;
     this.datapointsOutside = false;
-    this.seriesList = _.map(results.data, (series, i) => this.seriesHandler(series, i));
+    this.seriesList = dataList.map(this.seriesHandler.bind(this));
     this.datapointsWarning = this.datapointsCount === 0 || this.datapointsOutside;
 
     this.annotationsPromise.then(annotations => {
@@ -177,7 +179,7 @@ class GraphCtrl extends MetricsPanelCtrl {
       this.loading = false;
       this.render(this.seriesList);
     });
-  };
+  }
 
   seriesHandler(seriesData, index) {
     var datapoints = seriesData.datapoints;
@@ -199,13 +201,12 @@ class GraphCtrl extends MetricsPanelCtrl {
       }
 
       this.datapointsCount += datapoints.length;
+
+      this.panel.tooltip.msResolution = this.panel.tooltip.msResolution || series.isMsResolutionNeeded();
     }
 
+    series.applySeriesOverrides(this.panel.seriesOverrides);
     return series;
-  }
-
-  render(data?: any) {
-    this.broadcastRender(data);
   }
 
   changeSeriesColor(series, color) {
@@ -261,13 +262,13 @@ class GraphCtrl extends MetricsPanelCtrl {
     }
   }
 
-  toggleYAxis(info) {
-    var override = _.findWhere(this.panel.seriesOverrides, { alias: info.alias });
+  toggleAxis(info) {
+    var override = _.findWhere(this.panel.seriesOverrides, {alias: info.alias});
     if (!override) {
       override = { alias: info.alias };
       this.panel.seriesOverrides.push(override);
     }
-    override.yaxis = info.yaxis === 2 ? 1 : 2;
+    info.yaxis = override.yaxis = info.yaxis === 2 ? 1 : 2;
     this.render();
   };
 
@@ -294,6 +295,10 @@ class GraphCtrl extends MetricsPanelCtrl {
 
   exportCsv() {
     fileExport.exportSeriesListToCsv(this.seriesList);
+  }
+
+  exportCsvColumns() {
+    fileExport.exportSeriesListToCsvColumns(this.seriesList);
   }
 }
 
