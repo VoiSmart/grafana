@@ -79,7 +79,7 @@ function (angular, _, queryDef) {
         case 'terms_histogram':
         case 'terms': {
           settings.order = settings.order || "asc";
-          settings.size = settings.size || "0";
+          settings.size = settings.size || "10";
           settings.orderBy = settings.orderBy || "_term";
 
           if (settings.size !== '0') {
