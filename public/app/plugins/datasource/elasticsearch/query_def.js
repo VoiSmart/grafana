@@ -21,10 +21,10 @@ function (_) {
     ],
 
     bucketAggTypes: [
-      {text: "Terms",           value: 'terms' },
+      {text: "Terms",           value: 'terms', requiresField: true},
       {text: "Filters",         value: 'filters' },
-      {text: "Date Histogram",  value: 'date_histogram' },
-      {text: "Term Histogram",  value: 'terms_histogram' },
+      {text: "Date Histogram",  value: 'date_histogram', requiresField: true},
+      {text: "Term Histogram",  value: 'terms_histogram', requiresField: true},
     ],
 
     orderByOptions: [
