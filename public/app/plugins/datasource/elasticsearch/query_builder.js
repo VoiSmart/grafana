@@ -22,7 +22,13 @@ function (queryDef) {
 
   ElasticQueryBuilder.prototype.buildTermsAgg = function(aggDef, queryNode, target) {
     var metricRef, metric, y;
-    queryNode.terms = { "field": aggDef.field };
+    if (aggDef.settings.field_type === 'Expression') {
+      queryNode.terms = { "script": aggDef.field };
+    } else if (aggDef.settings.field_type === 'Groovy') {
+      queryNode.terms = { "script": aggDef.field };
+    } else {
+      queryNode.terms = { "field": aggDef.field };
+    }
 
     if (!aggDef.settings) {
       return queryNode;
@@ -74,16 +80,16 @@ function (queryDef) {
     var esAgg = {};
     var settings = aggDef.settings || {};
     esAgg.interval = settings.histogram_interval || 1;
-    if (settings.histogram_field_type === 'Numeric Field') {
-      esAgg.field = aggDef.field;
-    } else if (settings.histogram_field_type === 'Expression') {
+    if (settings.field_type === 'Expression') {
       //Script with inline expression
       esAgg.script = aggDef.field;
       esAgg.lang = 'expression';//settings.histogram_field_type;
-    } else if (settings.histogram_field_type === 'Groovy') {
+    } else if (settings.field_type === 'Groovy') {
       //Script with inline expression
       esAgg.script = aggDef.field;
       esAgg.lang = 'groovy';//settings.histogram_field_type;
+    } else {
+      esAgg.field = aggDef.field;
     }
     esAgg.min_doc_count = settings.min_doc_count || 0;
     //esAgg.extended_bounds = {min: "$minFrom", max: "$maxTo"};
