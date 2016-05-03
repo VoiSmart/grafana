@@ -41,6 +41,7 @@ function (_) {
     histogramFieldTypeOptions: [
       {text: "Numeric Field", value: 'num_field' },
       {text: "Expression",    value: 'expression' },
+      {text: "Groovy",    value: 'groovy' },
     ],
 
     sizeOptions: [

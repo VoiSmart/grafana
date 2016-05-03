@@ -80,6 +80,10 @@ function (queryDef) {
       //Script with inline expression
       esAgg.script = aggDef.field;
       esAgg.lang = 'expression';//settings.histogram_field_type;
+    } else if (settings.histogram_field_type === 'Groovy') {
+      //Script with inline expression
+      esAgg.script = aggDef.field;
+      esAgg.lang = 'groovy';//settings.histogram_field_type;
     }
     esAgg.min_doc_count = settings.min_doc_count || 0;
     //esAgg.extended_bounds = {min: "$minFrom", max: "$maxTo"};
