@@ -44,6 +44,7 @@ function (_, queryDef) {
             for (i = 0; i < esAgg.buckets.length; i++) {
               bucket = esAgg.buckets[i];
               var values = bucket[metric.id].values;
+
               newSeries.datapoints.push([values[percentileName], bucket.key]);
             }
             seriesList.push(newSeries);
@@ -84,6 +85,8 @@ function (_, queryDef) {
             if (value !== undefined) {
               if (value.normalized_value) {
                 newSeries.datapoints.push([value.normalized_value, bucket.key]);
+              } else if (value.value === null) {
+                newSeries.datapoints.push([0, bucket.key]);
               } else {
                 newSeries.datapoints.push([value.value, bucket.key]);
               }
