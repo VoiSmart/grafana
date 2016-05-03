@@ -70,6 +70,23 @@ function (queryDef) {
     return esAgg;
   };
 
+  ElasticQueryBuilder.prototype.getHistogramAgg = function(aggDef) {
+    var esAgg = {};
+    var settings = aggDef.settings || {};
+    esAgg.interval = settings.histogram_interval || 1;
+    if (settings.histogram_field_type === 'Numeric Field') {
+      esAgg.field = aggDef.field;
+    } else if (settings.histogram_field_type === 'Expression') {
+      //Script with inline expression
+      esAgg.script = aggDef.field;
+      esAgg.lang = 'expression';//settings.histogram_field_type;
+    }
+    esAgg.min_doc_count = settings.min_doc_count || 0;
+    //esAgg.extended_bounds = {min: "$minFrom", max: "$maxTo"};
+
+    return esAgg;
+  };
+
   ElasticQueryBuilder.prototype.getFiltersAgg = function(aggDef) {
     var filterObj = {};
 
@@ -143,6 +160,10 @@ function (queryDef) {
       switch(aggDef.type) {
         case 'date_histogram': {
           esAgg["date_histogram"] = this.getDateHistogramAgg(aggDef);
+          break;
+        }
+        case 'histogram': {
+          esAgg["histogram"] = this.getHistogramAgg(aggDef);
           break;
         }
         case 'filters': {

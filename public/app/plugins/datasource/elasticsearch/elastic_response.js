@@ -161,6 +161,8 @@ function (_, queryDef) {
           this.processMetrics(esAgg, target, seriesList, props);
         } else if (aggDef.type === 'terms_histogram')  {
           this.processMetrics(esAgg, target, seriesList, props);
+        } else if (aggDef.type === 'histogram')  {
+          this.processMetrics(esAgg, target, seriesList, props);
         } else {
           this.processAggregationDocs(esAgg, aggDef, target, docs, props);
         }

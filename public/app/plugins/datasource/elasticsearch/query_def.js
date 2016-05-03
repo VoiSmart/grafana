@@ -25,6 +25,7 @@ function (_) {
       {text: "Filters",         value: 'filters' },
       {text: "Date Histogram",  value: 'date_histogram', requiresField: true},
       {text: "Term Histogram",  value: 'terms_histogram', requiresField: true},
+      {text: "Histogram",       value: 'histogram', requiresField: true},
     ],
 
     orderByOptions: [
@@ -35,6 +36,11 @@ function (_) {
     orderOptions: [
       {text: "Top",     value: 'desc' },
       {text: "Bottom",  value: 'asc' },
+    ],
+
+    histogramFieldTypeOptions: [
+      {text: "Numeric Field", value: 'num_field' },
+      {text: "Expression",    value: 'expression' },
     ],
 
     sizeOptions: [
