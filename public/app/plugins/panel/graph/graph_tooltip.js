@@ -1,5 +1,6 @@
 define([
   'jquery',
+  'lodash'
 ],
 function ($) {
   'use strict';
@@ -11,12 +12,19 @@ function ($) {
 
     var $tooltip = $('<div id="tooltip" class="graph-tooltip">');
 
+    this.destroy = function() {
+      $tooltip.remove();
+    };
+
     this.findHoverIndexFromDataPoints = function(posX, series, last) {
       var ps = series.datapoints.pointsize;
       var initial = last*ps;
       var len = series.datapoints.points.length;
       for (var j = initial; j < len; j += ps) {
-        if (series.datapoints.points[j] > posX) {
+        // Special case of a non stepped line, highlight the very last point just before a null point
+        if ((series.datapoints.points[initial] != null && series.datapoints.points[j] == null && ! series.lines.steps)
+            //normal case
+            || series.datapoints.points[j] > posX) {
           return Math.max(j - ps,  0)/ps;
         }
       }
@@ -40,27 +48,40 @@ function ($) {
     };
 
     this.getMultiSeriesPlotHoverInfo = function(seriesList, pos) {
-      var value, i, series, hoverIndex;
+      var value, i, series, hoverIndex, hoverDistance, pointTime, yaxis;
       var results = [];
 
       //now we know the current X (j) position for X and Y values
       var last_value = 0; //needed for stacked values
 
+      var minDistance, minTime;
+
       for (i = 0; i < seriesList.length; i++) {
         series = seriesList[i];
 
         if (!series.data.length || (panel.legend.hideEmpty && series.allIsNull)) {
-          results.push({ hidden: true });
+          // Init value & yaxis so that it does not brake series sorting
+          results.push({ hidden: true, value: 0, yaxis: 0 });
           continue;
         }
 
         if (!series.data.length || (panel.legend.hideZero && series.allIsZero)) {
-          results.push({ hidden: true });
+          // Init value & yaxis so that it does not brake series sorting
+          results.push({ hidden: true, value: 0, yaxis: 0 });
           continue;
         }
 
         hoverIndex = this.findHoverIndexFromData(pos.x, series);
-        results.time = series.data[hoverIndex][0];
+        hoverDistance = pos.x - series.data[hoverIndex][0];
+        pointTime = series.data[hoverIndex][0];
+
+        // Take the closest point before the cursor, or if it does not exist, the closest after
+        if (! minDistance
+            || (hoverDistance >=0 && (hoverDistance < minDistance || minDistance < 0))
+            || (hoverDistance < 0 && hoverDistance > minDistance)) {
+          minDistance = hoverDistance;
+          minTime = pointTime;
+        }
 
         if (series.stack) {
           if (panel.tooltip.value_type === 'individual') {
@@ -80,12 +101,29 @@ function ($) {
           // stacked and steppedLine plots can have series with different length.
           // Stacked series can increase its length on each new stacked serie if null points found,
           // to speed the index search we begin always on the last found hoverIndex.
-          var newhoverIndex = this.findHoverIndexFromDataPoints(pos.x, series, hoverIndex);
-          results.push({ value: value, hoverIndex: newhoverIndex });
-        } else {
-          results.push({ value: value, hoverIndex: hoverIndex });
+          hoverIndex = this.findHoverIndexFromDataPoints(pos.x, series, hoverIndex);
         }
+
+        // Be sure we have a yaxis so that it does not brake series sorting
+        yaxis = 0;
+        if (series.yaxis) {
+          yaxis = series.yaxis.n;
+        }
+
+        results.push({
+          value: value,
+          hoverIndex: hoverIndex,
+          color: series.color,
+          label: series.label,
+          time: pointTime,
+          distance: hoverDistance,
+          yaxis: yaxis,
+          index: i
+        });
       }
+
+      // Time of the point closer to pointer
+      results.time = minTime;
 
       return results;
     };
@@ -110,18 +148,18 @@ function ($) {
       var seriesList = getSeriesFn();
       var group, value, absoluteTime, hoverInfo, i, series, seriesHtml, tooltipFormat;
 
-      if (panel.tooltip.msResolution) {
-        tooltipFormat = 'YYYY-MM-DD HH:mm:ss.SSS';
-      } else {
-        tooltipFormat = 'YYYY-MM-DD HH:mm:ss';
-      }
-
       if (dashboard.sharedCrosshair) {
-        ctrl.publishAppEvent('setCrosshair', { pos: pos, scope: scope });
+        ctrl.publishAppEvent('setCrosshair', {pos: pos, scope: scope});
       }
 
       if (seriesList.length === 0) {
         return;
+      }
+
+      if (seriesList[0].hasMsResolution) {
+        tooltipFormat = 'YYYY-MM-DD HH:mm:ss.SSS';
+      } else {
+        tooltipFormat = 'YYYY-MM-DD HH:mm:ss';
       }
 
       if (panel.tooltip.shared) {
@@ -132,6 +170,22 @@ function ($) {
         seriesHtml = '';
 
         absoluteTime = dashboard.formatDate(seriesHoverInfo.time, tooltipFormat);
+
+        // Dynamically reorder the hovercard for the current time point if the
+        // option is enabled, sort by yaxis by default.
+        if (panel.tooltip.sort === 2) {
+          seriesHoverInfo.sort(function(a, b) {
+            return b.value - a.value;
+          });
+        } else if (panel.tooltip.sort === 1) {
+          seriesHoverInfo.sort(function(a, b) {
+            return a.value - b.value;
+          });
+        } else {
+          seriesHoverInfo.sort(function(a, b) {
+            return a.yaxis - b.yaxis;
+          });
+        }
 
         for (i = 0; i < seriesHoverInfo.length; i++) {
           hoverInfo = seriesHoverInfo[i];
@@ -145,14 +199,14 @@ function ($) {
             highlightClass = 'graph-tooltip-list-item--highlight';
           }
 
-          series = seriesList[i];
+          series = seriesList[hoverInfo.index];
 
           value = series.formatValue(hoverInfo.value);
 
           seriesHtml += '<div class="graph-tooltip-list-item ' + highlightClass + '"><div class="graph-tooltip-series-name">';
-          seriesHtml += '<i class="fa fa-minus" style="color:' + series.color +';"></i> ' + series.label + ':</div>';
+          seriesHtml += '<i class="fa fa-minus" style="color:' + hoverInfo.color +';"></i> ' + hoverInfo.label + ':</div>';
           seriesHtml += '<div class="graph-tooltip-value">' + value + '</div></div>';
-          plot.highlight(i, hoverInfo.hoverIndex);
+          plot.highlight(hoverInfo.index, hoverInfo.hoverIndex);
         }
 
         self.showTooltip(absoluteTime, seriesHtml, pos);

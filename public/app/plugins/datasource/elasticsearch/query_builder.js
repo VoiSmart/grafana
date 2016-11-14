@@ -125,7 +125,23 @@ function (queryDef) {
     return query;
   };
 
-  ElasticQueryBuilder.prototype.build = function(target) {
+  ElasticQueryBuilder.prototype.addAdhocFilters = function(query, adhocFilters) {
+    if (!adhocFilters) {
+      return;
+    }
+
+    var i, filter, condition;
+    var must = query.query.filtered.filter.bool.must;
+
+    for (i = 0; i < adhocFilters.length; i++) {
+      filter = adhocFilters[i];
+      condition = {};
+      condition[filter.key] = filter.value;
+      must.push({"term": condition});
+    }
+  };
+
+  ElasticQueryBuilder.prototype.build = function(target, adhocFilters) {
     // make sure query has defaults;
     target.metrics = target.metrics || [{ type: 'count', id: '1' }];
     target.dsType = 'elasticsearch';
@@ -151,6 +167,8 @@ function (queryDef) {
         }
       }
     };
+
+    this.addAdhocFilters(query, adhocFilters);
 
     // handle document query
     if (target.bucketAggs.length === 0) {
@@ -242,12 +260,6 @@ function (queryDef) {
       "size": 0,
       "query": {
         "filtered": {
-          "query": {
-            "query_string": {
-              "analyze_wildcard": true,
-              "query": '$lucene_query',
-            }
-          },
           "filter": {
             "bool": {
               "must": [{"range": this.getRangeFilter()}]
@@ -256,6 +268,16 @@ function (queryDef) {
         }
       }
     };
+
+    if (queryDef.query) {
+      query.query.filtered.query = {
+        "query_string": {
+          "analyze_wildcard": true,
+          "query": queryDef.query,
+        }
+      };
+    }
+
     query.aggs =  {
       "1": {
         "terms": {
