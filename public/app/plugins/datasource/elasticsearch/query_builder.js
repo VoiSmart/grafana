@@ -1,7 +1,9 @@
 define([
-  './query_def'
+  './query_def',
+  'app/core/config',
+  'js_timezone_detect'
 ],
-function (queryDef) {
+function (queryDef, config, jstz) {
   'use strict';
 
   function ElasticQueryBuilder(options) {
@@ -63,7 +65,14 @@ function (queryDef) {
     esAgg.interval = settings.interval;
     esAgg.field = this.timeField;
     esAgg.min_doc_count = settings.min_doc_count || 0;
-    esAgg.extended_bounds = {min: "$timeFrom", max: "$timeTo"};
+
+    if (config.bootData.user.timezone === 'browser') {
+      esAgg.format = 'strict_date_time_no_millis';
+      esAgg.time_zone = jstz.determine().name();
+    }
+    else {
+      esAgg.extended_bounds = {min: "$timeFrom", max: "$timeTo"};
+    }
 
     if (esAgg.interval === 'auto') {
       esAgg.interval = "$interval";
@@ -185,7 +194,7 @@ function (queryDef) {
       var aggDef = target.bucketAggs[i];
       var esAgg = {};
 
-      switch(aggDef.type) {
+      switch (aggDef.type) {
         case 'date_histogram': {
           esAgg["date_histogram"] = this.getDateHistogramAgg(aggDef);
           break;

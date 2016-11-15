@@ -9,6 +9,7 @@ System.config({
     'eventemitter3': 'vendor/npm/eventemitter3/index.js',
     'tether-drop': 'vendor/npm/tether-drop/dist/js/drop.js',
     'moment': 'vendor/moment.js',
+    'js_timezone_detect': 'vendor/js_timezone_detect.js',
     "jquery": "vendor/jquery/dist/jquery.js",
     'lodash-src': 'vendor/lodash/dist/lodash.js',
     "lodash": 'app/core/lodash_extended.js',
