@@ -8,7 +8,9 @@ export function exportSeriesListToCsv(seriesList) {
     var text = 'sep=;\nSeries;Time;Value\n';
     _.each(seriesList, function(series) {
         _.each(series.datapoints, function(dp) {
-            text += series.alias + ';' + new Date(dp[1]).toISOString() + ';' + dp[0] + '\n';
+            var th = dp[1];
+            try { th = new Date(dp[1]).toISOString(); } catch (e) {}
+            text += series.alias + ';' + th + ';' + dp[0] + '\n';
         });
     });
     saveSaveBlob(text, 'grafana_data_export.csv');
