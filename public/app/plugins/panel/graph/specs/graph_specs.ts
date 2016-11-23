@@ -211,9 +211,9 @@ describe('grafanaGraph', function() {
         scope.range.to = moment([2015, 11, 20]);
       });
 
-      it('should format dates as month days', function() {
+      it('should format dates as month days or days month', function() {
         var axis = ctx.plotOptions.xaxis;
-        expect(axis.timeformat).to.be('%m/%d');
+        expect(axis.timeformat).to.match(/%d\/%m|%m\/%d/);
       });
     });
 
