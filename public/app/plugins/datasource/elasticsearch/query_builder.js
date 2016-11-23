@@ -66,7 +66,7 @@ function (queryDef, config, jstz) {
     esAgg.field = this.timeField;
     esAgg.min_doc_count = settings.min_doc_count || 0;
 
-    if (config.bootData.user.timezone === 'browser') {
+    if (config && config.bootData && config.bootData.user && config.bootData.user.timezone === 'browser') {
       esAgg.format = 'strict_date_time_no_millis';
       esAgg.time_zone = jstz.determine().name();
     }
