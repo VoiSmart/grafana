@@ -8,6 +8,7 @@ import $ from 'jquery';
 
 import {Emitter, contextSrv, appEvents} from 'app/core/core';
 import {DashboardRow} from './row/row_model';
+import sortByKeys from 'app/core/utils/sort_by_keys';
 
 export class DashboardModel {
   id: any;
@@ -18,7 +19,7 @@ export class DashboardModel {
   style: any;
   timezone: any;
   editable: any;
-  sharedCrosshair: any;
+  graphTooltip: any;
   rows: DashboardRow[];
   time: any;
   timepicker: any;
@@ -36,7 +37,7 @@ export class DashboardModel {
   events: any;
   editMode: boolean;
 
-  constructor(data, meta) {
+  constructor(data, meta?) {
     if (!data) {
       data = {};
     }
@@ -51,7 +52,7 @@ export class DashboardModel {
     this.style = data.style || "dark";
     this.timezone = data.timezone || '';
     this.editable = data.editable !== false;
-    this.sharedCrosshair = data.sharedCrosshair || false;
+    this.graphTooltip = data.graphTooltip || 0;
     this.hideControls = data.hideControls || false;
     this.time = data.time || { from: 'now-6h', to: 'now' };
     this.timepicker = data.timepicker || {};
@@ -107,7 +108,10 @@ export class DashboardModel {
     this.rows = _.map(rows, row => row.getSaveModel());
     this.templating.list = _.map(variables, variable => variable.getSaveModel ? variable.getSaveModel() : variable);
 
+    // make clone
     var copy = $.extend(true, {}, this);
+    //  sort clone
+    copy = sortByKeys(copy);
 
     // restore properties
     this.events = events;
@@ -189,32 +193,22 @@ export class DashboardModel {
     });
   }
 
-  toggleEditMode() {
-    if (!this.meta.canEdit) {
-      console.log('Not allowed to edit dashboard');
-      return;
-    }
-
-    this.editMode = !this.editMode;
-    this.updateSubmenuVisibility();
-    this.events.emit('edit-mode-changed', this.editMode);
-  }
-
   setPanelFocus(id) {
     this.meta.focusPanelId = id;
   }
 
   updateSubmenuVisibility() {
-    if (this.editMode) {
-      this.meta.submenuEnabled = true;
-      return;
-    }
+    this.meta.submenuEnabled = (() => {
+      if (this.links.length > 0) { return true; }
 
-    var visibleVars = _.filter(this.templating.list, function(template) {
-      return template.hide !== 2;
-    });
+      var visibleVars = _.filter(this.templating.list, variable => variable.hide !== 2);
+      if (visibleVars.length > 0) { return true; }
 
-    this.meta.submenuEnabled = visibleVars.length > 0 || this.annotations.list.length > 0 || this.links.length > 0;
+      var visibleAnnotations = _.filter(this.annotations.list, annotation => annotation.hide !== true);
+      if (visibleAnnotations.length > 0) { return true; }
+
+      return false;
+    })();
   }
 
   getPanelInfoById(panelId) {
@@ -250,12 +244,12 @@ export class DashboardModel {
     return newPanel;
   }
 
-  formatDate(date, format) {
+  formatDate(date, format?) {
     date = moment.isMoment(date) ? date : moment(date);
     format = format || 'YYYY-MM-DD HH:mm:ss';
-    this.timezone = this.getTimezone();
+    let timezone = this.getTimezone();
 
-    return this.timezone === 'browser' ?
+    return timezone === 'browser' ?
       moment(date).format(format) :
       moment.utc(date).format(format);
   }
@@ -265,6 +259,18 @@ export class DashboardModel {
     for (let row of this.rows) {
       row.destroy();
     }
+  }
+
+  cycleGraphTooltip() {
+    this.graphTooltip = (this.graphTooltip + 1) % 3;
+  }
+
+  sharedTooltipModeEnabled() {
+    return this.graphTooltip > 0;
+  }
+
+  sharedCrosshairModeOnly() {
+    return this.graphTooltip === 1;
   }
 
   getRelativeTime(date) {
@@ -297,7 +303,7 @@ export class DashboardModel {
     var i, j, k;
     var oldVersion = this.schemaVersion;
     var panelUpgrades = [];
-    this.schemaVersion = 13;
+    this.schemaVersion = 14;
 
     if (oldVersion === this.schemaVersion) {
       return;
@@ -600,6 +606,10 @@ export class DashboardModel {
           delete panel.grid.threshold2Color;
           delete panel.grid.thresholdLine;
         });
+      }
+
+      if (oldVersion < 14) {
+        this.graphTooltip = old.sharedCrosshair ? 1 : 0;
       }
 
       if (panelUpgrades.length === 0) {

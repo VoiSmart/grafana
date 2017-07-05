@@ -74,7 +74,7 @@ export class KeybindingSrv {
       evt.stopPropagation();
       evt.returnValue = false;
       return this.$rootScope.$apply(fn.bind(this));
-    });
+    }, 'keydown');
   }
 
   showDashEditView(view) {
@@ -83,12 +83,9 @@ export class KeybindingSrv {
   }
 
   setupDashboardBindings(scope, dashboard) {
-    // this.bind('b', () => {
-    //   dashboard.toggleEditMode();
-    // });
-
     this.bind('mod+o', () => {
-      dashboard.sharedCrosshair = !dashboard.sharedCrosshair;
+      dashboard.graphTooltip = (dashboard.graphTooltip + 1) % 3;
+      appEvents.emit('graph-hover-clear');
       scope.broadcastRefresh();
     });
 
@@ -101,7 +98,11 @@ export class KeybindingSrv {
     });
 
     this.bind('t z', () => {
-      scope.appEvent('zoom-out');
+      scope.appEvent('zoom-out', 2);
+    });
+
+    this.bind('ctrl+z', () => {
+      scope.appEvent('zoom-out', 2);
     });
 
     this.bind('t left', () => {
@@ -110,10 +111,6 @@ export class KeybindingSrv {
 
     this.bind('t right', () => {
       scope.appEvent('shift-time-forward');
-    });
-
-    this.bind('mod+i', () => {
-      scope.appEvent('quick-snapshot');
     });
 
     // edit panel
@@ -182,6 +179,20 @@ export class KeybindingSrv {
       }
     });
 
+    // collapse all rows
+    this.bind('d C', () => {
+      for (let row of dashboard.rows) {
+        row.collapse = true;
+      }
+    });
+
+    // expand all rows
+    this.bind('d E', () => {
+      for (let row of dashboard.rows) {
+        row.collapse = false;
+      }
+    });
+
     this.bind('d r', () => {
       scope.broadcastRefresh();
     });
@@ -210,7 +221,7 @@ export class KeybindingSrv {
       }
 
       scope.appEvent('hide-dash-editor');
-      scope.exitFullscreen();
+      scope.appEvent('panel-change-view', {fullscreen: false, edit: false});
     });
   }
 }

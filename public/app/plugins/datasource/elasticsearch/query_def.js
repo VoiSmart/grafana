@@ -83,22 +83,53 @@ function (_) {
       {text: '1d', value: '1d'},
     ],
 
+    movingAvgModelOptions: [
+      {text: 'Simple', value: 'simple'},
+      {text: 'Linear', value: 'linear'},
+      {text: 'Exponentially Weighted', value: 'ewma'},
+      {text: 'Holt Linear', value: 'holt'},
+      {text: 'Holt Winters', value: 'holt_winters'},
+    ],
+
     pipelineOptions: {
       'moving_avg' : [
         {text: 'window', default: 5},
-        {text: 'model', default: 'simple'}
+        {text: 'model', default: 'simple'},
+        {text: 'predict', default: undefined},
+        {text: 'minimize', default: false},
       ],
       'derivative': [
         {text: 'unit', default: undefined}
       ]
     },
 
+<<<<<<<
     complexPipelineOptions: {
       'bucket_script': [
         {text: 'script', default: '_1 OP _2'}
       ]
     },
 
+=======
+    movingAvgModelSettings: {
+      'simple' : [],
+      'linear' : [],
+      'ewma' : [
+        {text: "Alpha", value: "alpha", default: undefined}],
+      'holt' : [
+        {text: "Alpha", value: "alpha",  default: undefined},
+        {text: "Beta", value: "beta",  default: undefined},
+       ],
+      'holt_winters' : [
+        {text: "Alpha", value: "alpha", default: undefined},
+        {text: "Beta", value: "beta", default: undefined},
+        {text: "Gamma", value: "gamma", default: undefined},
+        {text: "Period", value: "period", default: undefined},
+        {text: "Pad", value: "pad", default: undefined, isCheckbox: true},
+       ],
+    },
+
+>>>>>>>
     getMetricAggTypes: function(esVersion) {
       return _.filter(this.metricAggTypes, function(f) {
         if (f.minVersion) {
@@ -138,6 +169,7 @@ function (_) {
       return result;
     },
 
+<<<<<<<
     getComplexPipelineOptions: function(metric) {
       if (!this.isComplexPipelineAgg(metric.type)) {
         return [];
@@ -167,6 +199,21 @@ function (_) {
       return result;
     },
 
+=======
+    getMovingAvgSettings: function(model, filtered) {
+      var filteredResult = [];
+      if (filtered) {
+        _.each(this.movingAvgModelSettings[model], function(setting) {
+          if (!(setting.isCheckbox)) {
+            filteredResult.push(setting);
+          }
+        });
+        return filteredResult;
+      }
+      return this.movingAvgModelSettings[model];
+    },
+
+>>>>>>>
     getOrderByOptions: function(target) {
       var self = this;
       var metricRefs = [];
