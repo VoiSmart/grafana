@@ -13,7 +13,21 @@ import (
 )
 
 func init() {
-	alerting.RegisterNotifier("email", NewEmailNotifier)
+	alerting.RegisterNotifier(&alerting.NotifierPlugin{
+		Type:        "email",
+		Name:        "Email",
+		Description: "Sends notifications using Grafana server configured SMTP settings",
+		Factory:     NewEmailNotifier,
+		OptionsTemplate: `
+      <h3 class="page-heading">Email addresses</h3>
+      <div class="gf-form">
+         <textarea rows="7" class="gf-form-input width-25" required ng-model="ctrl.model.settings.addresses"></textarea>
+      </div>
+      <div class="gf-form">
+      <span>You can enter multiple email addresses using a ";" separator</span>
+      </div>
+    `,
+	})
 }
 
 type EmailNotifier struct {
@@ -55,14 +69,21 @@ func (this *EmailNotifier) Notify(evalContext *alerting.EvalContext) error {
 		return err
 	}
 
+	error := ""
+	if evalContext.Error != nil {
+		error = evalContext.Error.Error()
+	}
+
 	cmd := &m.SendEmailCommandSync{
 		SendEmailCommand: m.SendEmailCommand{
+			Subject: evalContext.GetNotificationTitle(),
 			Data: map[string]interface{}{
 				"Title":        evalContext.GetNotificationTitle(),
 				"State":        evalContext.Rule.State,
 				"Name":         evalContext.Rule.Name,
 				"StateModel":   evalContext.GetStateModel(),
 				"Message":      evalContext.Rule.Message,
+				"Error":        error,
 				"RuleUrl":      ruleUrl,
 				"ImageLink":    "",
 				"EmbededImage": "",
@@ -89,6 +110,7 @@ func (this *EmailNotifier) Notify(evalContext *alerting.EvalContext) error {
 
 	if err != nil {
 		this.log.Error("Failed to send alert notification email", "error", err)
+		return err
 	}
 	return nil
 

@@ -10,15 +10,23 @@ var alertQueryDef = new QueryPartDef({
   type: 'query',
   params: [
     {name: "queryRefId", type: 'string', dynamicLookup: true},
-    {name: "from", type: "string", options: ['1s', '10s', '1m', '5m', '10m', '15m', '1h']},
+    {name: "from", type: "string", options: ['1s', '10s', '1m', '5m', '10m', '15m', '1h', '24h', '48h']},
     {name: "to", type: "string", options: ['now']},
   ],
-  defaultParams: ['#A', '5m', 'now', 'avg']
+  defaultParams: ['#A', '15m', 'now', 'avg']
 });
 
 var conditionTypes = [
   {text: 'Query', value: 'query'},
 ];
+
+var alertStateSortScore = {
+  alerting: 1,
+  no_data: 2,
+  pending: 3,
+  ok: 4,
+  paused: 5,
+};
 
 var evalFunctions = [
   {text: 'IS ABOVE', value: 'gt'},
@@ -47,6 +55,7 @@ var noDataModes = [
   {text: 'Alerting', value: 'alerting'},
   {text: 'No Data', value: 'no_data'},
   {text: 'Keep Last State', value: 'keep_state'},
+  {text: 'Ok', value: 'ok'},
 ];
 
 var executionErrorModes = [
@@ -82,17 +91,9 @@ function getStateDisplayModel(state) {
         stateClass: 'alert-state-warning'
       };
     }
-    case 'execution_error': {
-      return {
-        text: 'EXECUTION ERROR',
-        iconClass: 'icon-gf icon-gf-critical',
-        stateClass: 'alert-state-critical'
-      };
-    }
-
     case 'paused': {
       return {
-        text: 'paused',
+        text: 'PAUSED',
         iconClass: "fa fa-pause",
         stateClass: 'alert-state-paused'
       };
@@ -107,14 +108,42 @@ function getStateDisplayModel(state) {
   }
 }
 
-function joinEvalMatches(matches, seperator: string) {
+function joinEvalMatches(matches, separator: string) {
   return _.reduce(matches, (res, ev)=> {
+    if (ev.metric !== undefined && ev.value !== undefined) {
+      res.push(ev.metric + '=' + ev.value);
+    }
+
+    // For backwards compatibility . Should be be able to remove this after ~2017-06-01
     if (ev.Metric !== undefined && ev.Value !== undefined) {
-      res.push(ev.Metric + "=" + ev.Value);
+      res.push(ev.Metric + '=' + ev.Value);
     }
 
     return res;
-  }, []).join(seperator);
+  }, []).join(separator);
+}
+
+function getAlertAnnotationInfo(ah) {
+
+  // backward compatability, can be removed in grafana 5.x
+  // old way stored evalMatches in data property directly,
+  // new way stores it in evalMatches property on new data object
+
+  if (_.isArray(ah.data)) {
+    return joinEvalMatches(ah.data, ', ');
+  } else if (_.isArray(ah.data.evalMatches)) {
+    return joinEvalMatches(ah.data.evalMatches, ', ');
+  }
+
+  if (ah.data.error) {
+    return "Error: " + ah.data.error;
+  }
+
+  if (ah.data.noData || ah.data.no_data) {
+    return "No Data";
+  }
+
+  return "";
 }
 
 export default {
@@ -127,5 +156,6 @@ export default {
   executionErrorModes: executionErrorModes,
   reducerTypes: reducerTypes,
   createReducerPart: createReducerPart,
-  joinEvalMatches: joinEvalMatches,
+  getAlertAnnotationInfo: getAlertAnnotationInfo,
+  alertStateSortScore: alertStateSortScore,
 };

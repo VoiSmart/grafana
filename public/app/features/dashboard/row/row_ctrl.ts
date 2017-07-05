@@ -44,7 +44,7 @@ export class DashRowCtrl {
     if (dropTarget) {
       dropTarget = this.dashboard.getPanelInfoById(dropTarget.id);
       // if draging new panel onto existing panel split it
-      if (dragObject.isNew) {
+      if (dragObject.panel.isNew) {
         dragObject.panel.span = dropTarget.panel.span = dropTarget.panel.span/2;
         // insert after
         dropTarget.row.panels.splice(dropTarget.index+1, 0, dragObject.panel);
@@ -216,7 +216,6 @@ coreModule.directive('panelDropZone', function($timeout) {
       }
 
       if (indrag === true) {
-        var dropZoneSpan = 12 - row.span;
         if (dropZoneSpan > 1) {
           return showPanel(dropZoneSpan, 'Drop Here');
         }

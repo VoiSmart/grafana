@@ -46,15 +46,15 @@
 				<li>$measurement = replaced with measurement name</li>
 				<li>$1 - $9 = replaced with part of measurement name (if you separate your measurement name with dots)</li>
 				<li>$col = replaced with column name</li>
-				<li>$tag_hostname = replaced with the value of the hostname tag</li>
-				<li>You can also use [[tag_hostname]] pattern replacement syntax</li>
+				<li>$tag_exampletag = replaced with the value of the <i>exampletag</i> tag</li>
+				<li>You can also use [[tag_exampletag]] pattern replacement syntax</li>
 			</ul>
 		</div>
 
 		<div class="grafana-info-box span6" ng-if="ctrl.panelCtrl.editorHelpIndex === 2">
 			<h5>Stacking and fill</h5>
 			<ul>
-				<li>When stacking is enabled it important that points align</li>
+				<li>When stacking is enabled it is important that points align</li>
 				<li>If there are missing points for one series it can cause gaps or missing bars</li>
 				<li>You must use fill(0), and select a group by time low limit</li>
 				<li>Use the group by time option below your queries and specify for example &gt;10s if your metrics are written every 10 seconds</li>
