@@ -39,3 +39,6 @@ profile.cov
 /pkg/cmd/grafana-cli/grafana-cli
 /pkg/cmd/grafana-server/grafana-server
 /examples/*/dist
+
+# MacOS junk
+*.DS_Store
