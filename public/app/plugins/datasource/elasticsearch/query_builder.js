@@ -74,12 +74,10 @@ function (queryDef, config, jstz) {
     esAgg.field = this.timeField;
     esAgg.min_doc_count = settings.min_doc_count || 0;
 
+    esAgg.format = 'epoch_millis';
+    esAgg.extended_bounds = {min: "$timeFrom", max: "$timeTo"};
     if (config && config.bootData && config.bootData.user && config.bootData.user.timezone === 'browser') {
-      esAgg.format = 'strict_date_time_no_millis';
       esAgg.time_zone = jstz.determine().name();
-    }
-    else {
-      esAgg.extended_bounds = {min: "$timeFrom", max: "$timeTo"};
     }
 
     if (esAgg.interval === 'auto') {
