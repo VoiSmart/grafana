@@ -42,3 +42,6 @@ profile.cov
 
 # MacOS junk
 *.DS_Store
+
+# YARN junk
+package-lock.json
