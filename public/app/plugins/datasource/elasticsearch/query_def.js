@@ -103,14 +103,12 @@ function (_) {
       ]
     },
 
-<<<<<<<
     complexPipelineOptions: {
       'bucket_script': [
         {text: 'script', default: '_1 OP _2'}
       ]
     },
 
-=======
     movingAvgModelSettings: {
       'simple' : [],
       'linear' : [],
@@ -129,7 +127,6 @@ function (_) {
        ],
     },
 
->>>>>>>
     getMetricAggTypes: function(esVersion) {
       return _.filter(this.metricAggTypes, function(f) {
         if (f.minVersion) {
@@ -169,7 +166,6 @@ function (_) {
       return result;
     },
 
-<<<<<<<
     getComplexPipelineOptions: function(metric) {
       if (!this.isComplexPipelineAgg(metric.type)) {
         return [];
@@ -199,7 +195,6 @@ function (_) {
       return result;
     },
 
-=======
     getMovingAvgSettings: function(model, filtered) {
       var filteredResult = [];
       if (filtered) {
@@ -213,7 +208,6 @@ function (_) {
       return this.movingAvgModelSettings[model];
     },
 
->>>>>>>
     getOrderByOptions: function(target) {
       var self = this;
       var metricRefs = [];
