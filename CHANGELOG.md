@@ -1,3 +1,21 @@
+# 5.0.0 (unreleased)
+
+## Bug Fixes
+
+* **Migrations**: migration fails where dashboard.created_by is null [#8783](https://github.com/grafana/grafana/issues/8783)
+
+# 4.4.0 (2017-07-04)
+
+## New Features
+
+* **Table panel**: Render cell values as links that can use url that uses variables from current table row. [#3754](https://github.com/grafana/grafana/issues/3754)
+
+# 4.4.2 (unreleased) 
+
+## Bug Fixes
+
+* **Forms(TextArea)**: Bug fix for no scroll in text areas [#8797](https://github.com/grafana/grafana/issues/8797)
+
 # 4.4.1 (2017-07-05)
 
 ## Bug Fixes
