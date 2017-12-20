@@ -1,5 +1,3 @@
-///<reference path="../../../headers/common.d.ts" />
-
 import _ from 'lodash';
 import angular from 'angular';
 import moment from 'moment';
@@ -7,44 +5,55 @@ import moment from 'moment';
 import * as rangeUtil from 'app/core/utils/rangeutil';
 
 export class TimePickerCtrl {
-
   static tooltipFormat = 'MMM D, YYYY HH:mm:ss';
   static defaults = {
     time_options: ['5m', '15m', '1h', '6h', '12h', '24h', '2d', '7d', '30d'],
-    refresh_intervals: ['5s', '10s', '30s', '1m', '5m', '15m', '30m', '1h', '2h', '1d'],
+    refresh_intervals: [
+      '5s',
+      '10s',
+      '30s',
+      '1m',
+      '5m',
+      '15m',
+      '30m',
+      '1h',
+      '2h',
+      '1d',
+    ],
   };
 
   dashboard: any;
   panel: any;
   absolute: any;
   timeRaw: any;
+  editTimeRaw: any;
   tooltip: string;
   rangeString: string;
   timeOptions: any;
   refresh: any;
-  isOpen: boolean;
   isUtc: boolean;
   firstDayOfWeek: number;
+  closeDropdown: any;
+  isOpen: boolean;
 
   /** @ngInject */
   constructor(private $scope, private $rootScope, private timeSrv) {
-    $scope.ctrl = this;
+    this.$scope.ctrl = this;
 
     $rootScope.onAppEvent('shift-time-forward', () => this.move(1), $scope);
     $rootScope.onAppEvent('shift-time-backward', () => this.move(-1), $scope);
-    $rootScope.onAppEvent('refresh', () => this.init(), $scope);
-    $rootScope.onAppEvent('dash-editor-hidden', () => this.isOpen = false, $scope);
+    $rootScope.onAppEvent('refresh', this.onRefresh.bind(this), $scope);
 
-    this.init();
-  }
-
-  init() {
+    // init options
     this.panel = this.dashboard.timepicker;
-
     _.defaults(this.panel, TimePickerCtrl.defaults);
-
     this.firstDayOfWeek = moment.localeData().firstDayOfWeek();
 
+    // init time stuff
+    this.onRefresh();
+  }
+
+  onRefresh() {
     var time = angular.copy(this.timeSrv.timeRange());
     var timeRaw = angular.copy(time.raw);
 
@@ -57,20 +66,16 @@ export class TimePickerCtrl {
       if (moment.isMoment(timeRaw.to)) {
         timeRaw.to.local();
       }
+      this.isUtc = false;
     } else {
       this.isUtc = true;
     }
 
     this.rangeString = rangeUtil.describeTimeRange(timeRaw);
-    this.absolute = {fromJs: time.from.toDate(), toJs: time.to.toDate()};
+    this.absolute = { fromJs: time.from.toDate(), toJs: time.to.toDate() };
     this.tooltip = this.dashboard.formatDate(time.from) + ' <br>to<br>';
     this.tooltip += this.dashboard.formatDate(time.to);
-
-    // do not update time raw when dropdown is open
-    // as auto refresh will reset the from/to input fields
-    if (!this.isOpen) {
-      this.timeRaw = timeRaw;
-    }
+    this.timeRaw = timeRaw;
   }
 
   zoom(factor) {
@@ -97,28 +102,30 @@ export class TimePickerCtrl {
       from = range.from.valueOf();
     }
 
-    this.timeSrv.setTime({from: moment.utc(from), to: moment.utc(to) });
-
+    this.timeSrv.setTime({ from: moment.utc(from), to: moment.utc(to) });
   }
 
   openDropdown() {
-    this.init();
-    this.isOpen = true;
-    this.timeOptions = rangeUtil.getRelativeTimesList(this.panel, this.rangeString);
+    if (this.isOpen) {
+      this.isOpen = false;
+      return;
+    }
+
+    this.onRefresh();
+    this.editTimeRaw = this.timeRaw;
+    this.timeOptions = rangeUtil.getRelativeTimesList(
+      this.panel,
+      this.rangeString
+    );
     this.refresh = {
       value: this.dashboard.refresh,
       options: _.map(this.panel.refresh_intervals, (interval: any) => {
-        return {text: interval, value: interval};
-      })
+        return { text: interval, value: interval };
+      }),
     };
 
-    this.refresh.options.unshift({text: 'off'});
-
-    this.$rootScope.appEvent('show-dash-editor', {
-      src: 'public/app/features/dashboard/timepicker/dropdown.html',
-      scope: this.$scope,
-      cssClass: 'gf-timepicker-dropdown',
-    });
+    this.refresh.options.unshift({ text: 'off' });
+    this.isOpen = true;
   }
 
   applyCustom() {
@@ -126,33 +133,36 @@ export class TimePickerCtrl {
       this.timeSrv.setAutoRefresh(this.refresh.value);
     }
 
-    this.timeSrv.setTime(this.timeRaw, true);
-    this.$rootScope.appEvent('hide-dash-editor');
+    this.timeSrv.setTime(this.editTimeRaw);
+    this.isOpen = false;
   }
 
   absoluteFromChanged() {
-    this.timeRaw.from = this.getAbsoluteMomentForTimezone(this.absolute.fromJs);
+    this.editTimeRaw.from = this.getAbsoluteMomentForTimezone(
+      this.absolute.fromJs
+    );
   }
 
   absoluteToChanged() {
-    this.timeRaw.to = this.getAbsoluteMomentForTimezone(this.absolute.toJs);
+    this.editTimeRaw.to = this.getAbsoluteMomentForTimezone(this.absolute.toJs);
   }
 
   getAbsoluteMomentForTimezone(jsDate) {
-    return this.dashboard.isTimezoneUtc() ? moment(jsDate).utc() : moment(jsDate);
+    return this.dashboard.isTimezoneUtc()
+      ? moment(jsDate).utc()
+      : moment(jsDate);
   }
 
   setRelativeFilter(timespan) {
-    var range = {from: timespan.from, to: timespan.to};
+    var range = { from: timespan.from, to: timespan.to };
 
     if (this.panel.nowDelay && range.to === 'now') {
       range.to = 'now-' + this.panel.nowDelay;
     }
 
     this.timeSrv.setTime(range);
-    this.$rootScope.appEvent('hide-dash-editor');
+    this.isOpen = false;
   }
-
 }
 
 export function settingsDirective() {
@@ -163,8 +173,8 @@ export function settingsDirective() {
     bindToController: true,
     controllerAs: 'ctrl',
     scope: {
-      dashboard: "="
-    }
+      dashboard: '=',
+    },
   };
 }
 
@@ -176,14 +186,19 @@ export function timePickerDirective() {
     bindToController: true,
     controllerAs: 'ctrl',
     scope: {
-      dashboard: "="
-    }
+      dashboard: '=',
+    },
   };
 }
 
+angular
+  .module('grafana.directives')
+  .directive('gfTimePickerSettings', settingsDirective);
+angular
+  .module('grafana.directives')
+  .directive('gfTimePicker', timePickerDirective);
 
-angular.module('grafana.directives').directive('gfTimePickerSettings', settingsDirective);
-angular.module('grafana.directives').directive('gfTimePicker', timePickerDirective);
-
-import {inputDateDirective} from './input_date';
-angular.module("grafana.directives").directive('inputDatetime', inputDateDirective);
+import { inputDateDirective } from './input_date';
+angular
+  .module('grafana.directives')
+  .directive('inputDatetime', inputDateDirective);

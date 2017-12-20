@@ -14,71 +14,89 @@ import (
 	"golang.org/x/net/context/ctxhttp"
 
 	"github.com/grafana/grafana/pkg/log"
+	"github.com/grafana/grafana/pkg/models"
 	"github.com/grafana/grafana/pkg/setting"
 	"github.com/grafana/grafana/pkg/tsdb"
+	"github.com/opentracing/opentracing-go"
 )
 
 type GraphiteExecutor struct {
-	*tsdb.DataSourceInfo
+	HttpClient *http.Client
 }
 
-func NewGraphiteExecutor(dsInfo *tsdb.DataSourceInfo) tsdb.Executor {
-	return &GraphiteExecutor{dsInfo}
+func NewGraphiteExecutor(datasource *models.DataSource) (tsdb.TsdbQueryEndpoint, error) {
+	return &GraphiteExecutor{}, nil
 }
 
 var (
-	glog       log.Logger
-	HttpClient *http.Client
+	glog log.Logger
 )
 
 func init() {
 	glog = log.New("tsdb.graphite")
-	tsdb.RegisterExecutor("graphite", NewGraphiteExecutor)
-
-	HttpClient = tsdb.GetDefaultClient()
+	tsdb.RegisterTsdbQueryEndpoint("graphite", NewGraphiteExecutor)
 }
 
-func (e *GraphiteExecutor) Execute(ctx context.Context, queries tsdb.QuerySlice, context *tsdb.QueryContext) *tsdb.BatchResult {
-	result := &tsdb.BatchResult{}
+func (e *GraphiteExecutor) Query(ctx context.Context, dsInfo *models.DataSource, tsdbQuery *tsdb.TsdbQuery) (*tsdb.Response, error) {
+	result := &tsdb.Response{}
+
+	from := "-" + formatTimeRange(tsdbQuery.TimeRange.From)
+	until := formatTimeRange(tsdbQuery.TimeRange.To)
+	var target string
 
 	formData := url.Values{
-		"from":          []string{"-" + formatTimeRange(context.TimeRange.From)},
-		"until":         []string{formatTimeRange(context.TimeRange.To)},
+		"from":          []string{from},
+		"until":         []string{until},
 		"format":        []string{"json"},
 		"maxDataPoints": []string{"500"},
 	}
 
-	for _, query := range queries {
+	for _, query := range tsdbQuery.Queries {
 		if fullTarget, err := query.Model.Get("targetFull").String(); err == nil {
-			formData["target"] = []string{fixIntervalFormat(fullTarget)}
+			target = fixIntervalFormat(fullTarget)
 		} else {
-			formData["target"] = []string{fixIntervalFormat(query.Model.Get("target").MustString())}
+			target = fixIntervalFormat(query.Model.Get("target").MustString())
 		}
 	}
+
+	formData["target"] = []string{target}
 
 	if setting.Env == setting.DEV {
 		glog.Debug("Graphite request", "params", formData)
 	}
 
-	req, err := e.createRequest(formData)
+	req, err := e.createRequest(dsInfo, formData)
 	if err != nil {
-		result.Error = err
-		return result
+		return nil, err
 	}
 
-	res, err := ctxhttp.Do(ctx, HttpClient, req)
+	httpClient, err := dsInfo.GetHttpClient()
 	if err != nil {
-		result.Error = err
-		return result
+		return nil, err
+	}
+
+	span, ctx := opentracing.StartSpanFromContext(ctx, "graphite query")
+	span.SetTag("target", target)
+	span.SetTag("from", from)
+	span.SetTag("until", until)
+	defer span.Finish()
+
+	opentracing.GlobalTracer().Inject(
+		span.Context(),
+		opentracing.HTTPHeaders,
+		opentracing.HTTPHeadersCarrier(req.Header))
+
+	res, err := ctxhttp.Do(ctx, httpClient, req)
+	if err != nil {
+		return nil, err
 	}
 
 	data, err := e.parseResponse(res)
 	if err != nil {
-		result.Error = err
-		return result
+		return nil, err
 	}
 
-	result.QueryResults = make(map[string]*tsdb.QueryResult)
+	result.Results = make(map[string]*tsdb.QueryResult)
 	queryRes := tsdb.NewQueryResult()
 
 	for _, series := range data {
@@ -92,8 +110,8 @@ func (e *GraphiteExecutor) Execute(ctx context.Context, queries tsdb.QuerySlice,
 		}
 	}
 
-	result.QueryResults["A"] = queryRes
-	return result
+	result.Results["A"] = queryRes
+	return result, nil
 }
 
 func (e *GraphiteExecutor) parseResponse(res *http.Response) ([]TargetResponseDTO, error) {
@@ -118,8 +136,8 @@ func (e *GraphiteExecutor) parseResponse(res *http.Response) ([]TargetResponseDT
 	return data, nil
 }
 
-func (e *GraphiteExecutor) createRequest(data url.Values) (*http.Request, error) {
-	u, _ := url.Parse(e.Url)
+func (e *GraphiteExecutor) createRequest(dsInfo *models.DataSource, data url.Values) (*http.Request, error) {
+	u, _ := url.Parse(dsInfo.Url)
 	u.Path = path.Join(u.Path, "render")
 
 	req, err := http.NewRequest(http.MethodPost, u.String(), strings.NewReader(data.Encode()))
@@ -129,8 +147,8 @@ func (e *GraphiteExecutor) createRequest(data url.Values) (*http.Request, error)
 	}
 
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	if e.BasicAuth {
-		req.SetBasicAuth(e.BasicAuthUser, e.BasicAuthPassword)
+	if dsInfo.BasicAuth {
+		req.SetBasicAuth(dsInfo.BasicAuthUser, dsInfo.BasicAuthPassword)
 	}
 
 	return req, err
@@ -140,7 +158,7 @@ func formatTimeRange(input string) string {
 	if input == "now" {
 		return input
 	}
-	return strings.Replace(strings.Replace(input, "m", "min", -1), "M", "mon", -1)
+	return strings.Replace(strings.Replace(strings.Replace(input, "now", "", -1), "m", "min", -1), "M", "mon", -1)
 }
 
 func fixIntervalFormat(target string) string {

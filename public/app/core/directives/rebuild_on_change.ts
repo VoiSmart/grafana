@@ -1,9 +1,4 @@
-///<reference path="../../headers/common.d.ts" />
-
-import angular from 'angular';
-import _ from 'lodash';
 import $ from 'jquery';
-
 import coreModule from '../core_module';
 
 function getBlockNodes(nodes) {
@@ -23,8 +18,8 @@ function getBlockNodes(nodes) {
   return blockNodes || nodes;
 }
 
+/** @ngInject **/
 function rebuildOnChange($animate) {
-
   return {
     multiElement: true,
     terminal: true,
@@ -52,7 +47,10 @@ function rebuildOnChange($animate) {
         }
       }
 
-      scope.$watch(attrs.property, function rebuildOnChangeAction(value, oldValue) {
+      scope.$watch(attrs.property, function rebuildOnChangeAction(
+        value,
+        oldValue
+      ) {
         if (childScope && value !== oldValue) {
           cleanUp();
         }
@@ -60,15 +58,17 @@ function rebuildOnChange($animate) {
         if (!childScope && (value || attrs.showNull)) {
           transclude(function(clone, newScope) {
             childScope = newScope;
-            clone[clone.length++] = document.createComment(' end rebuild on change ');
-            block = {clone: clone};
+            clone[clone.length++] = document.createComment(
+              ' end rebuild on change '
+            );
+            block = { clone: clone };
             $animate.enter(clone, elem.parent(), elem);
           });
         } else {
           cleanUp();
         }
       });
-    }
+    },
   };
 }
 

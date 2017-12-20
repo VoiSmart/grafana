@@ -14,42 +14,51 @@ import (
 	"net/http"
 	"net/url"
 
-	"gopkg.in/guregu/null.v3"
-
+	"github.com/grafana/grafana/pkg/components/null"
 	"github.com/grafana/grafana/pkg/log"
+	"github.com/grafana/grafana/pkg/models"
 	"github.com/grafana/grafana/pkg/setting"
 	"github.com/grafana/grafana/pkg/tsdb"
 )
 
 type OpenTsdbExecutor struct {
-	*tsdb.DataSourceInfo
+	//*models.DataSource
+	//httpClient *http.Client
 }
 
-func NewOpenTsdbExecutor(dsInfo *tsdb.DataSourceInfo) tsdb.Executor {
-	return &OpenTsdbExecutor{dsInfo}
+func NewOpenTsdbExecutor(datasource *models.DataSource) (tsdb.TsdbQueryEndpoint, error) {
+	/*
+		httpClient, err := datasource.GetHttpClient()
+
+		if err != nil {
+			return nil, err
+		}
+	*/
+
+	return &OpenTsdbExecutor{
+	//DataSource: datasource,
+	//httpClient: httpClient,
+	}, nil
 }
 
 var (
-	plog       log.Logger
-	HttpClient *http.Client
+	plog log.Logger
 )
 
 func init() {
 	plog = log.New("tsdb.opentsdb")
-	tsdb.RegisterExecutor("opentsdb", NewOpenTsdbExecutor)
-
-	HttpClient = tsdb.GetDefaultClient()
+	tsdb.RegisterTsdbQueryEndpoint("opentsdb", NewOpenTsdbExecutor)
 }
 
-func (e *OpenTsdbExecutor) Execute(ctx context.Context, queries tsdb.QuerySlice, queryContext *tsdb.QueryContext) *tsdb.BatchResult {
-	result := &tsdb.BatchResult{}
+func (e *OpenTsdbExecutor) Query(ctx context.Context, dsInfo *models.DataSource, queryContext *tsdb.TsdbQuery) (*tsdb.Response, error) {
+	result := &tsdb.Response{}
 
 	var tsdbQuery OpenTsdbQuery
 
 	tsdbQuery.Start = queryContext.TimeRange.GetFromAsMsEpoch()
 	tsdbQuery.End = queryContext.TimeRange.GetToAsMsEpoch()
 
-	for _, query := range queries {
+	for _, query := range queryContext.Queries {
 		metric := e.buildMetric(query)
 		tsdbQuery.Queries = append(tsdbQuery.Queries, metric)
 	}
@@ -58,29 +67,32 @@ func (e *OpenTsdbExecutor) Execute(ctx context.Context, queries tsdb.QuerySlice,
 		plog.Debug("OpenTsdb request", "params", tsdbQuery)
 	}
 
-	req, err := e.createRequest(tsdbQuery)
+	req, err := e.createRequest(dsInfo, tsdbQuery)
 	if err != nil {
-		result.Error = err
-		return result
+		return nil, err
 	}
 
-	res, err := ctxhttp.Do(ctx, HttpClient, req)
+	httpClient, err := dsInfo.GetHttpClient()
 	if err != nil {
-		result.Error = err
-		return result
+		return nil, err
+	}
+
+	res, err := ctxhttp.Do(ctx, httpClient, req)
+	if err != nil {
+		return nil, err
 	}
 
 	queryResult, err := e.parseResponse(tsdbQuery, res)
 	if err != nil {
-		return result.WithError(err)
+		return nil, err
 	}
 
-	result.QueryResults = queryResult
-	return result
+	result.Results = queryResult
+	return result, nil
 }
 
-func (e *OpenTsdbExecutor) createRequest(data OpenTsdbQuery) (*http.Request, error) {
-	u, _ := url.Parse(e.Url)
+func (e *OpenTsdbExecutor) createRequest(dsInfo *models.DataSource, data OpenTsdbQuery) (*http.Request, error) {
+	u, _ := url.Parse(dsInfo.Url)
 	u.Path = path.Join(u.Path, "api/query")
 
 	postData, err := json.Marshal(data)
@@ -92,8 +104,8 @@ func (e *OpenTsdbExecutor) createRequest(data OpenTsdbQuery) (*http.Request, err
 	}
 
 	req.Header.Set("Content-Type", "application/json")
-	if e.BasicAuth {
-		req.SetBasicAuth(e.BasicAuthUser, e.BasicAuthPassword)
+	if dsInfo.BasicAuth {
+		req.SetBasicAuth(dsInfo.BasicAuthUser, dsInfo.BasicAuthPassword)
 	}
 
 	return req, err
@@ -181,6 +193,10 @@ func (e *OpenTsdbExecutor) buildMetric(query *tsdb.Query) map[string]interface{}
 		resetValue, resetValueCheck := query.Model.CheckGet("counterResetValue")
 		if resetValueCheck {
 			rateOptions["resetValue"] = resetValue.MustFloat64()
+		}
+
+		if !counterMaxCheck && (!resetValueCheck || resetValue.MustFloat64() == 0) {
+			rateOptions["dropResets"] = true
 		}
 
 		metric["rateOptions"] = rateOptions

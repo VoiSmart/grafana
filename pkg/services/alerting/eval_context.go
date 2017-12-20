@@ -75,14 +75,6 @@ func (c *EvalContext) ShouldUpdateAlertState() bool {
 	return c.Rule.State != c.PrevAlertState
 }
 
-func (c *EvalContext) ShouldSendNotification() bool {
-	if (c.PrevAlertState == m.AlertStatePending) && (c.Rule.State == m.AlertStateOK) {
-		return false
-	}
-
-	return true
-}
-
 func (a *EvalContext) GetDurationMs() float64 {
 	return float64(a.EndTime.Nanosecond()-a.StartTime.Nanosecond()) / float64(1000000)
 }
@@ -113,7 +105,7 @@ func (c *EvalContext) GetRuleUrl() (string, error) {
 	if slug, err := c.GetDashboardSlug(); err != nil {
 		return "", err
 	} else {
-		ruleUrl := fmt.Sprintf("%sdashboard/db/%s?fullscreen&edit&tab=alert&panelId=%d", setting.AppUrl, slug, c.Rule.PanelId)
+		ruleUrl := fmt.Sprintf("%sdashboard/db/%s?fullscreen&edit&tab=alert&panelId=%d&orgId=%d", setting.AppUrl, slug, c.Rule.PanelId, c.Rule.OrgId)
 		return ruleUrl, nil
 	}
 }

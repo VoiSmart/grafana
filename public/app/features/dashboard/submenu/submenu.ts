@@ -9,37 +9,22 @@ export class SubmenuCtrl {
   dashboard: any;
 
   /** @ngInject */
-  constructor(private $rootScope,
-              private variableSrv,
-              private templateSrv,
-              private $location) {
+  constructor(private $rootScope, private variableSrv, private $location) {
     this.annotations = this.dashboard.templating.list;
     this.variables = this.variableSrv.variables;
-    console.log(this.variables);
   }
 
   annotationStateChanged() {
     this.$rootScope.$broadcast('refresh');
   }
 
-  getValuesForTag(variable, tagKey) {
-    return this.variableSrv.getValuesForTag(variable, tagKey);
-  }
-
   variableUpdated(variable) {
-    this.variableSrv.variableUpdated(variable).then(() => {
-      this.$rootScope.$emit('template-variable-value-updated');
-      this.$rootScope.$broadcast('refresh');
-    });
+    this.variableSrv.variableUpdated(variable, true);
   }
 
   openEditView(editview) {
-    var search = _.extend(this.$location.search(), {editview: editview});
+    var search = _.extend(this.$location.search(), { editview: editview });
     this.$location.search(search);
-  }
-
-  exitBuildMode() {
-    this.dashboard.toggleEditMode();
   }
 }
 
@@ -51,9 +36,11 @@ export function submenuDirective() {
     bindToController: true,
     controllerAs: 'ctrl',
     scope: {
-      dashboard: "=",
-    }
+      dashboard: '=',
+    },
   };
 }
 
-angular.module('grafana.directives').directive('dashboardSubmenu', submenuDirective);
+angular
+  .module('grafana.directives')
+  .directive('dashboardSubmenu', submenuDirective);

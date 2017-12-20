@@ -1,11 +1,10 @@
 ///<reference path="../../headers/common.d.ts" />
 
-import kbn from 'app/core/utils/kbn';
 import coreModule from 'app/core/core_module';
 
 var template = `
 <input type="file" id="dashupload" name="dashupload" class="hide"/>
-<label class="btn btn-secondary" for="dashupload">
+<label class="btn btn-success" for="dashupload">
   <i class="fa fa-upload"></i>
   Upload .json File
 </label>
@@ -29,17 +28,20 @@ function uploadDashboardDirective(timer, alertSrv, $location) {
               dash = JSON.parse(e.target.result);
             } catch (err) {
               console.log(err);
-              scope.appEvent('alert-error', ['Import failed', 'JSON -> JS Serialization failed: ' + err.message]);
+              scope.appEvent('alert-error', [
+                'Import failed',
+                'JSON -> JS Serialization failed: ' + err.message,
+              ]);
               return;
             }
 
             scope.$apply(function() {
-              scope.onUpload({dash: dash});
+              scope.onUpload({ dash: dash });
             });
           };
         };
 
-        for (var i = 0, f; f = files[i]; i++) {
+        for (var i = 0, f; (f = files[i]); i++) {
           var reader = new FileReader();
           reader.onload = readerOnload();
           reader.readAsText(f);
@@ -50,11 +52,17 @@ function uploadDashboardDirective(timer, alertSrv, $location) {
       // Check for the various File API support.
       if (wnd.File && wnd.FileReader && wnd.FileList && wnd.Blob) {
         // Something
-        document.getElementById('dashupload').addEventListener('change', file_selected, false);
+        document
+          .getElementById('dashupload')
+          .addEventListener('change', file_selected, false);
       } else {
-        alertSrv.set('Oops','Sorry, the HTML5 File APIs are not fully supported in this browser.','error');
+        alertSrv.set(
+          'Oops',
+          'Sorry, the HTML5 File APIs are not fully supported in this browser.',
+          'error'
+        );
       }
-    }
+    },
   };
 }
 

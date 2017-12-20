@@ -1,8 +1,5 @@
-///<reference path="../../headers/common.d.ts" />
-
-import _ from 'lodash';
 import kbn from 'app/core/utils/kbn';
-import {assignModelProperties} from 'app/core/core';
+import { assignModelProperties } from 'app/core/utils/model_utils';
 
 export interface Variable {
   setValue(option);
@@ -14,25 +11,21 @@ export interface Variable {
 }
 
 export var variableTypes = {};
-export {
-  assignModelProperties
-};
+export { assignModelProperties };
 
 export function containsVariable(...args: any[]) {
-  var variableName = args[args.length-1];
+  var variableName = args[args.length - 1];
   var str = args[0] || '';
 
-  for (var i = 1; i < args.length-1; i++) {
-    str += args[i] || '';
+  for (var i = 1; i < args.length - 1; i++) {
+    str += ' ' + args[i] || '';
   }
 
   variableName = kbn.regexEscape(variableName);
-  var findVarRegex = new RegExp('\\$(' + variableName + ')(?:\\W|$)|\\[\\[(' + variableName + ')\\]\\]', 'g');
+  var findVarRegex = new RegExp(
+    '\\$(' + variableName + ')(?:\\W|$)|\\[\\[(' + variableName + ')\\]\\]',
+    'g'
+  );
   var match = findVarRegex.exec(str);
   return match !== null;
 }
-
-
-
-
-

@@ -3,6 +3,7 @@ title = "Getting Started"
 description = "Getting started with Grafana guide"
 keywords = ["grafana", "intro", "guide", "started"]
 type = "docs"
+aliases = ["/guides/gettingstarted"]
 [menu.docs]
 name = "Getting Started"
 identifier = "getting_started_guide"
@@ -10,19 +11,22 @@ parent = "guides"
 +++
 
 # Getting started
-This guide will help you get started and acquainted with Grafana. It assumes you have a working Grafana server up and running and have added at least one [Data Source](/datasources/overview).
+
+This guide will help you get started and acquainted with Grafana. It assumes you have a working Grafana server up and running and have added at least one [Data Source](/features/datasources/).
 
 ## Beginner guides
+
 Watch the 10min [beginners guide to building dashboards](https://www.youtube.com/watch?v=sKNZMtoSHN4&index=7&list=PLDGkOdUX1Ujo3wHw9-z5Vo12YLqXRjzg2) to get a quick intro to setting up Dashboards and Panels.
 
 ## Basic Concepts
+
 Read the [Basic Concepts](/guides/basic_concepts) document to get a crash course in key Grafana concepts.
 
 ### Top header
 
-Let's start with creating a new Dashboard. You can find the new Dashboard link at the bottom of the Dashboard picker. You now have a blank Dashboard.
+Let's start with creating a new Dashboard. You can find the new Dashboard link on the right side of the Dashboard picker. You now have a blank Dashboard. 
 
-<img class="no-shadow" src="/img/docs/v2/v2_top_nav_annotated.png">
+<img class="no-shadow" src="/img/docs/v45/top_nav_annotated.png">
 
 The image above shows you the top header for a Dashboard.
 
@@ -34,21 +38,10 @@ The image above shows you the top header for a Dashboard.
 6. Settings: Manage Dashboard settings and features such as Templating and Annotations.
 
 ## Dashboards, Panels, Rows, the building blocks of Grafana...
-Dashboards are at the core of what Grafana is all about. Dashboards are composed of individual Panels arranged on a number of Rows. Grafana ships with a variety of Panels. Grafana makes it easy to construct the right queries, and customize the display properties so that you can create the perfect Dashboard for your need. Each Panel can interact with data from any configured Grafana Data Source (currently InfluxDB, Graphite, OpenTSDB, and KairosDB). The [Basic Concepts](/guides/basic_concepts) guide explores these key ideas in detail.
 
+Dashboards are at the core of what Grafana is all about. Dashboards are composed of individual Panels arranged on a number of Rows. Grafana ships with a variety of Panels. Grafana makes it easy to construct the right queries, and customize the display properties so that you can create the perfect Dashboard for your need. Each Panel can interact with data from any configured Grafana Data Source (currently InfluxDB, Graphite, OpenTSDB, Prometheus and Cloudwatch). The [Basic Concepts](/guides/basic_concepts) guide explores these key ideas in detail.
 
-## Adding & Editing Graphs and Panels
-
-![](/img/docs/v2/graph_metrics_tab_graphite.png)
-
-1. You add panels via row menu. The row menu is the green icon to the left of each row.
-2. To edit the graph you click on the graph title to open the panel menu, then `Edit`.
-3. This should take you to the `Metrics` tab. In this tab you should see the editor for your default data source.
-
-When you click the `Metrics` tab, you are presented with a Query Editor that is specific to the Panel Data Source. Use the Query Editor to build your queries and Grafana will visualize them in real time.
-
-
-<img src="/img/docs/v2/dashboard_annotated.png" class="no-shadow">
+<img src="/img/docs/v45/dashboard_annotated.png" class="no-shadow">
 
 1. Zoom out time range
 2. Time picker dropdown. Here you can access relative time range options, auto refresh options and set custom absolute time ranges.
@@ -56,6 +49,17 @@ When you click the `Metrics` tab, you are presented with a Query Editor that is 
 4. Row controls menu. Via this menu you can add panels to the row, set row height and more.
 5. Dashboard panel. You edit panels by clicking the panel title.
 6. Graph legend. You can change series colors, y-axis and series visibility directly from the legend.
+
+
+## Adding & Editing Graphs and Panels
+
+![](/img/docs/v45/metrics_tab.png)
+
+1. You add panels via row menu. The row menu is the icon to the left of each row.
+2. To edit the graph you click on the graph title to open the panel menu, then `Edit`.
+3. This should take you to the `Metrics` tab. In this tab you should see the editor for your default data source.
+
+When you click the `Metrics` tab, you are presented with a Query Editor that is specific to the Panel Data Source. Use the Query Editor to build your queries and Grafana will visualize them in real time.
 
 ## Drag-and-Drop panels
 

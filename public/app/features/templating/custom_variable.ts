@@ -1,9 +1,7 @@
 ///<reference path="../../headers/common.d.ts" />
 
 import _ from 'lodash';
-import kbn from 'app/core/utils/kbn';
-import {Variable, assignModelProperties, variableTypes} from './variable';
-import {VariableSrv} from './variable_srv';
+import { Variable, assignModelProperties, variableTypes } from './variable';
 
 export class CustomVariable implements Variable {
   query: string;
@@ -26,7 +24,7 @@ export class CustomVariable implements Variable {
   };
 
   /** @ngInject **/
-  constructor(private model, private timeSrv, private templateSrv, private variableSrv) {
+  constructor(private model, private variableSrv) {
     assignModelProperties(this, model, this.defaults);
   }
 
@@ -53,7 +51,7 @@ export class CustomVariable implements Variable {
   }
 
   addAllOption() {
-    this.options.unshift({text: 'All', value: "$__all"});
+    this.options.unshift({ text: 'All', value: '$__all' });
   }
 
   dependsOn(variable) {
@@ -75,6 +73,6 @@ export class CustomVariable implements Variable {
 variableTypes['custom'] = {
   name: 'Custom',
   ctor: CustomVariable,
-  description: 'Define variable values manually' ,
+  description: 'Define variable values manually',
   supportsMulti: true,
 };

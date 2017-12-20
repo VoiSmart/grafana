@@ -1,7 +1,6 @@
 ///<reference path="../../headers/common.d.ts" />
 
 import _ from 'lodash';
-import $ from 'jquery';
 import coreModule from 'app/core/core_module';
 import Drop from 'tether-drop';
 
@@ -27,8 +26,10 @@ export function infoPopover() {
       }
 
       transclude(function(clone, newScope) {
-        var content = document.createElement("div");
-        _.each(clone, (node) => {
+        var content = document.createElement('div');
+        content.className = 'markdown-html';
+
+        _.each(clone, node => {
           content.appendChild(node);
         });
 
@@ -40,17 +41,23 @@ export function infoPopover() {
           openOn: openOn,
           hoverOpenDelay: 400,
           tetherOptions: {
-            offset: offset
-          }
+            offset: offset,
+            constraints: [
+              {
+                to: 'window',
+                attachment: 'together',
+                pin: true,
+              },
+            ],
+          },
         });
 
         var unbind = scope.$on('$destroy', function() {
           drop.destroy();
           unbind();
         });
-
       });
-    }
+    },
   };
 }
 

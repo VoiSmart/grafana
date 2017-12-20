@@ -12,7 +12,7 @@ func TestAlertingDataAccess(t *testing.T) {
 	Convey("Testing Alerting data access", t, func() {
 		InitTestDB(t)
 
-		testDash := insertTestDashboard("dashboard with alerts", 1, "alert")
+		testDash := insertTestDashboard("dashboard with alerts", 1, 0, false, "alert")
 
 		items := []*m.Alert{
 			{
@@ -37,6 +37,37 @@ func TestAlertingDataAccess(t *testing.T) {
 
 		Convey("Can create one alert", func() {
 			So(err, ShouldBeNil)
+		})
+
+		Convey("Can set new states", func() {
+			Convey("new state ok", func() {
+				cmd := &m.SetAlertStateCommand{
+					AlertId: 1,
+					State:   m.AlertStateOK,
+				}
+
+				err = SetAlertState(cmd)
+				So(err, ShouldBeNil)
+			})
+
+			Convey("can pause alert", func() {
+				cmd := &m.PauseAllAlertCommand{
+					Paused: true,
+				}
+
+				err = PauseAllAlerts(cmd)
+				So(err, ShouldBeNil)
+
+				Convey("cannot updated paused alert", func() {
+					cmd := &m.SetAlertStateCommand{
+						AlertId: 1,
+						State:   m.AlertStateOK,
+					}
+
+					err = SetAlertState(cmd)
+					So(err, ShouldNotBeNil)
+				})
+			})
 		})
 
 		Convey("Can read properties", func() {
@@ -161,7 +192,7 @@ func TestAlertingDataAccess(t *testing.T) {
 
 			err = DeleteDashboard(&m.DeleteDashboardCommand{
 				OrgId: 1,
-				Slug:  testDash.Slug,
+				Id:    testDash.Id,
 			})
 
 			So(err, ShouldBeNil)

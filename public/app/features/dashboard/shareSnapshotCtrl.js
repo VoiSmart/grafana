@@ -12,6 +12,7 @@ function (angular, _) {
     $scope.snapshot = {
       name: $scope.dashboard.title,
       expires: 0,
+      timeoutSeconds: 4,
     };
 
     $scope.step = 1;
@@ -55,7 +56,7 @@ function (angular, _) {
 
       $timeout(function() {
         $scope.saveSnapshot(external);
-      }, 4000);
+      }, $scope.snapshot.timeoutSeconds * 1000);
     };
 
     $scope.saveSnapshot = function(external) {
@@ -95,17 +96,24 @@ function (angular, _) {
       });
     };
 
+    $scope.getSnapshotUrl = function() {
+      return $scope.snapshotUrl;
+    };
+
     $scope.scrubDashboard = function(dash) {
       // change title
       dash.title = $scope.snapshot.name;
+
       // make relative times absolute
       dash.time = timeSrv.timeRange();
+
       // remove panel queries & links
-      dash.forEachPanel(function(panel) {
+      _.each(dash.panels, function(panel) {
         panel.targets = [];
         panel.links = [];
         panel.datasource = null;
       });
+
       // remove annotation queries
       dash.annotations.list = _.chain(dash.annotations.list)
       .filter(function(annotation) {
@@ -115,9 +123,11 @@ function (angular, _) {
         return {
           name: annotation.name,
           enable: annotation.enable,
+          iconColor: annotation.iconColor,
           snapshotData: annotation.snapshotData
         };
       }).value();
+
       // remove template queries
       _.each(dash.templating.list, function(variable) {
         variable.query = "";
@@ -127,9 +137,12 @@ function (angular, _) {
 
       // snapshot single panel
       if ($scope.modeSharePanel) {
-        var singlePanel = dash.getPanelById($scope.panel.id);
-        singlePanel.span = 12;
-        dash.rows = [{ height: '500px', span: 12, panels: [singlePanel] }];
+        var singlePanel = $scope.panel.getSaveModel();
+        singlePanel.gridPos.w = 24;
+        singlePanel.gridPos.x = 0;
+        singlePanel.gridPos.y = 0;
+        singlePanel.gridPos.h = 20;
+        dash.panels = [singlePanel];
       }
 
       // cleanup snapshotData

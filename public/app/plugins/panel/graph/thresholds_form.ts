@@ -1,8 +1,6 @@
 ///<reference path="../../../headers/common.d.ts" />
 
-
-import _ from 'lodash';
-import coreModule from 'app/core/core_module';
+import coreModule from "app/core/core_module";
 
 export class ThresholdFormCtrl {
   panelCtrl: any;
@@ -27,7 +25,13 @@ export class ThresholdFormCtrl {
   }
 
   addThreshold() {
-    this.panel.thresholds.push({value: undefined, colorMode: "critical", op: 'gt', fill: true, line: true});
+    this.panel.thresholds.push({
+      value: undefined,
+      colorMode: "critical",
+      op: "gt",
+      fill: true,
+      line: true
+    });
     this.panelCtrl.render();
   }
 
@@ -38,6 +42,20 @@ export class ThresholdFormCtrl {
 
   render() {
     this.panelCtrl.render();
+  }
+
+  onFillColorChange(index) {
+    return newColor => {
+      this.panel.thresholds[index].fillColor = newColor;
+      this.render();
+    };
+  }
+
+  onLineColorChange(index) {
+    return newColor => {
+      this.panel.thresholds[index].lineColor = newColor;
+      this.render();
+    };
   }
 }
 
@@ -79,7 +97,7 @@ var template = `
       <div class="gf-form" ng-if="threshold.fill && threshold.colorMode === 'custom'">
         <label class="gf-form-label">Fill color</label>
         <span class="gf-form-label">
-          <spectrum-picker ng-model="threshold.fillColor" ng-change="ctrl.render()" ></spectrum-picker>
+          <color-picker color="threshold.fillColor" onChange="ctrl.onFillColorChange($index)"></color-picker>
         </span>
       </div>
 
@@ -89,7 +107,7 @@ var template = `
       <div class="gf-form" ng-if="threshold.line && threshold.colorMode === 'custom'">
         <label class="gf-form-label">Line color</label>
         <span class="gf-form-label">
-          <spectrum-picker ng-model="threshold.lineColor" ng-change="ctrl.render()" ></spectrum-picker>
+          <color-picker color="threshold.lineColor" onChange="ctrl.onLineColorChange($index)"></color-picker>
         </span>
       </div>
 
@@ -111,13 +129,13 @@ var template = `
 </div>
 `;
 
-coreModule.directive('graphThresholdForm', function() {
+coreModule.directive("graphThresholdForm", function() {
   return {
-    restrict: 'E',
+    restrict: "E",
     template: template,
     controller: ThresholdFormCtrl,
     bindToController: true,
-    controllerAs: 'ctrl',
+    controllerAs: "ctrl",
     scope: {
       panelCtrl: "="
     }

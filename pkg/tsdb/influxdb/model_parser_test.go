@@ -2,9 +2,10 @@ package influxdb
 
 import (
 	"testing"
+	"time"
 
 	"github.com/grafana/grafana/pkg/components/simplejson"
-	"github.com/grafana/grafana/pkg/tsdb"
+	"github.com/grafana/grafana/pkg/models"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -12,14 +13,13 @@ func TestInfluxdbQueryParser(t *testing.T) {
 	Convey("Influxdb query parser", t, func() {
 
 		parser := &InfluxdbQueryParser{}
-		dsInfo := &tsdb.DataSourceInfo{
+		dsInfo := &models.DataSource{
 			JsonData: simplejson.New(),
 		}
 
 		Convey("can parse influxdb json model", func() {
 			json := `
         {
-        "dsType": "influxdb",
         "groupBy": [
           {
             "params": [
@@ -115,14 +115,13 @@ func TestInfluxdbQueryParser(t *testing.T) {
 			So(len(res.GroupBy), ShouldEqual, 3)
 			So(len(res.Selects), ShouldEqual, 3)
 			So(len(res.Tags), ShouldEqual, 2)
-			So(res.Interval, ShouldEqual, ">20s")
+			So(res.Interval, ShouldEqual, time.Second*20)
 			So(res.Alias, ShouldEqual, "serie alias")
 		})
 
 		Convey("can part raw query json model", func() {
 			json := `
       {
-        "dsType": "influxdb",
         "groupBy": [
           {
             "params": [
@@ -174,7 +173,7 @@ func TestInfluxdbQueryParser(t *testing.T) {
 			So(len(res.GroupBy), ShouldEqual, 2)
 			So(len(res.Selects), ShouldEqual, 1)
 			So(len(res.Tags), ShouldEqual, 0)
-			So(res.Interval, ShouldEqual, ">10s")
+			So(res.Interval, ShouldEqual, time.Second*10)
 		})
 	})
 }

@@ -11,65 +11,68 @@ import (
 	"golang.org/x/net/context/ctxhttp"
 
 	"github.com/grafana/grafana/pkg/log"
+	"github.com/grafana/grafana/pkg/models"
 	"github.com/grafana/grafana/pkg/setting"
 	"github.com/grafana/grafana/pkg/tsdb"
 )
 
 type InfluxDBExecutor struct {
-	*tsdb.DataSourceInfo
+	//*models.DataSource
 	QueryParser    *InfluxdbQueryParser
 	ResponseParser *ResponseParser
+	//HttpClient     *http.Client
 }
 
-func NewInfluxDBExecutor(dsInfo *tsdb.DataSourceInfo) tsdb.Executor {
+func NewInfluxDBExecutor(datasource *models.DataSource) (tsdb.TsdbQueryEndpoint, error) {
 	return &InfluxDBExecutor{
-		DataSourceInfo: dsInfo,
 		QueryParser:    &InfluxdbQueryParser{},
 		ResponseParser: &ResponseParser{},
-	}
+	}, nil
 }
 
 var (
-	glog       log.Logger
-	HttpClient *http.Client
+	glog log.Logger
 )
 
 func init() {
 	glog = log.New("tsdb.influxdb")
-	tsdb.RegisterExecutor("influxdb", NewInfluxDBExecutor)
-
-	HttpClient = tsdb.GetDefaultClient()
+	tsdb.RegisterTsdbQueryEndpoint("influxdb", NewInfluxDBExecutor)
 }
 
-func (e *InfluxDBExecutor) Execute(ctx context.Context, queries tsdb.QuerySlice, context *tsdb.QueryContext) *tsdb.BatchResult {
-	result := &tsdb.BatchResult{}
+func (e *InfluxDBExecutor) Query(ctx context.Context, dsInfo *models.DataSource, tsdbQuery *tsdb.TsdbQuery) (*tsdb.Response, error) {
+	result := &tsdb.Response{}
 
-	query, err := e.getQuery(queries, context)
+	query, err := e.getQuery(dsInfo, tsdbQuery.Queries, tsdbQuery)
 	if err != nil {
-		return result.WithError(err)
+		return nil, err
 	}
 
-	rawQuery, err := query.Build(context)
+	rawQuery, err := query.Build(tsdbQuery)
 	if err != nil {
-		return result.WithError(err)
+		return nil, err
 	}
 
 	if setting.Env == setting.DEV {
 		glog.Debug("Influxdb query", "raw query", rawQuery)
 	}
 
-	req, err := e.createRequest(rawQuery)
+	req, err := e.createRequest(dsInfo, rawQuery)
 	if err != nil {
-		return result.WithError(err)
+		return nil, err
 	}
 
-	resp, err := ctxhttp.Do(ctx, HttpClient, req)
+	httpClient, err := dsInfo.GetHttpClient()
 	if err != nil {
-		return result.WithError(err)
+		return nil, err
+	}
+
+	resp, err := ctxhttp.Do(ctx, httpClient, req)
+	if err != nil {
+		return nil, err
 	}
 
 	if resp.StatusCode/100 != 2 {
-		return result.WithError(fmt.Errorf("Influxdb returned statuscode invalid status code: %v", resp.Status))
+		return nil, fmt.Errorf("Influxdb returned statuscode invalid status code: %v", resp.Status)
 	}
 
 	var response Response
@@ -79,23 +82,23 @@ func (e *InfluxDBExecutor) Execute(ctx context.Context, queries tsdb.QuerySlice,
 	err = dec.Decode(&response)
 
 	if err != nil {
-		return result.WithError(err)
+		return nil, err
 	}
 
 	if response.Err != nil {
-		return result.WithError(response.Err)
+		return nil, response.Err
 	}
 
-	result.QueryResults = make(map[string]*tsdb.QueryResult)
-	result.QueryResults["A"] = e.ResponseParser.Parse(&response, query)
+	result.Results = make(map[string]*tsdb.QueryResult)
+	result.Results["A"] = e.ResponseParser.Parse(&response, query)
 
-	return result
+	return result, nil
 }
 
-func (e *InfluxDBExecutor) getQuery(queries tsdb.QuerySlice, context *tsdb.QueryContext) (*Query, error) {
+func (e *InfluxDBExecutor) getQuery(dsInfo *models.DataSource, queries []*tsdb.Query, context *tsdb.TsdbQuery) (*Query, error) {
 	for _, v := range queries {
 
-		query, err := e.QueryParser.Parse(v.Model, e.DataSourceInfo)
+		query, err := e.QueryParser.Parse(v.Model, dsInfo)
 		if err != nil {
 			return nil, err
 		}
@@ -106,8 +109,8 @@ func (e *InfluxDBExecutor) getQuery(queries tsdb.QuerySlice, context *tsdb.Query
 	return nil, fmt.Errorf("query request contains no queries")
 }
 
-func (e *InfluxDBExecutor) createRequest(query string) (*http.Request, error) {
-	u, _ := url.Parse(e.Url)
+func (e *InfluxDBExecutor) createRequest(dsInfo *models.DataSource, query string) (*http.Request, error) {
+	u, _ := url.Parse(dsInfo.Url)
 	u.Path = path.Join(u.Path, "query")
 
 	req, err := http.NewRequest(http.MethodGet, u.String(), nil)
@@ -117,18 +120,18 @@ func (e *InfluxDBExecutor) createRequest(query string) (*http.Request, error) {
 
 	params := req.URL.Query()
 	params.Set("q", query)
-	params.Set("db", e.Database)
+	params.Set("db", dsInfo.Database)
 	params.Set("epoch", "s")
 	req.URL.RawQuery = params.Encode()
 
 	req.Header.Set("User-Agent", "Grafana")
 
-	if e.BasicAuth {
-		req.SetBasicAuth(e.BasicAuthUser, e.BasicAuthPassword)
+	if dsInfo.BasicAuth {
+		req.SetBasicAuth(dsInfo.BasicAuthUser, dsInfo.BasicAuthPassword)
 	}
 
-	if e.User != "" {
-		req.SetBasicAuth(e.User, e.Password)
+	if !dsInfo.BasicAuth && dsInfo.User != "" {
+		req.SetBasicAuth(dsInfo.User, dsInfo.Password)
 	}
 
 	glog.Debug("Influxdb request", "url", req.URL.String())

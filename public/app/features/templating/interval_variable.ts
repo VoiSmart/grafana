@@ -2,10 +2,10 @@
 
 import _ from 'lodash';
 import kbn from 'app/core/utils/kbn';
-import {Variable, assignModelProperties, variableTypes} from './variable';
-import {VariableSrv} from './variable_srv';
+import { Variable, assignModelProperties, variableTypes } from './variable';
 
 export class IntervalVariable implements Variable {
+  name: string;
   auto_count: number;
   auto_min: number;
   options: any;
@@ -29,7 +29,12 @@ export class IntervalVariable implements Variable {
   };
 
   /** @ngInject **/
-  constructor(private model, private timeSrv, private templateSrv, private variableSrv) {
+  constructor(
+    private model,
+    private timeSrv,
+    private templateSrv,
+    private variableSrv
+  ) {
     assignModelProperties(this, model, this.defaults);
     this.refresh = 2;
   }
@@ -51,17 +56,32 @@ export class IntervalVariable implements Variable {
 
     // add auto option if missing
     if (this.options.length && this.options[0].text !== 'auto') {
-      this.options.unshift({ text: 'auto', value: '$__auto_interval' });
+      this.options.unshift({
+        text: 'auto',
+        value: '$__auto_interval_' + this.name,
+      });
     }
 
-    var res = kbn.calculateInterval(this.timeSrv.timeRange(), this.auto_count, (this.auto_min ? ">"+this.auto_min : null));
+    var res = kbn.calculateInterval(
+      this.timeSrv.timeRange(),
+      this.auto_count,
+      this.auto_min
+    );
+    this.templateSrv.setGrafanaVariable(
+      '$__auto_interval_' + this.name,
+      res.interval
+    );
+    // for backward compatibility, to be removed eventually
     this.templateSrv.setGrafanaVariable('$__auto_interval', res.interval);
   }
 
   updateOptions() {
-   // extract options in comma separated string
-    this.options = _.map(this.query.split(/[,]+/), function(text) {
-      return {text: text.trim(), value: text.trim()};
+    // extract options between quotes and/or comma
+    this.options = _.map(this.query.match(/(["'])(.*?)\1|\w+/g), function(
+      text
+    ) {
+      text = text.replace(/["']+/g, '');
+      return { text: text.trim(), value: text.trim() };
     });
 
     this.updateAutoValue();
