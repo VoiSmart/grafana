@@ -64,6 +64,12 @@ export const metricAggTypes = [
     isPipelineAgg: true,
     minVersion: 2,
   },
+  { text: 'Bucket Scr',
+    value: 'bucket_script',
+    requiresField: false,
+    isComplexPipelineAgg: true,
+    minVersion: 2,
+  },
   { text: 'Raw Document', value: 'raw_document', requiresField: false },
 ];
 
@@ -72,12 +78,19 @@ export const bucketAggTypes = [
   { text: 'Filters', value: 'filters' },
   { text: 'Geo Hash Grid', value: 'geohash_grid', requiresField: true },
   { text: 'Date Histogram', value: 'date_histogram', requiresField: true },
+  { text: 'Term Histogram',  value: 'terms_histogram', requiresField: true },
   { text: 'Histogram', value: 'histogram', requiresField: true },
 ];
 
 export const orderByOptions = [{ text: 'Doc Count', value: '_count' }, { text: 'Term value', value: '_term' }];
 
 export const orderOptions = [{ text: 'Top', value: 'desc' }, { text: 'Bottom', value: 'asc' }];
+
+export const histogramFieldTypeOptions = [
+  { text: 'Numeric Field', value: 'num_field' },
+  { text: 'Expression',    value: 'expression' },
+  { text: 'Groovy',    value: 'groovy' },
+];
 
 export const sizeOptions = [
   { text: 'No limit', value: '0' },
@@ -130,6 +143,12 @@ export const pipelineOptions = {
   derivative: [{ text: 'unit', default: undefined }],
 };
 
+export const complexPipelineOptions = {
+  bucket_script: [
+    { text: 'script', default: '_1 OP _2' }
+  ]
+};
+
 export const movingAvgModelSettings = {
   simple: [],
   linear: [],
@@ -176,6 +195,35 @@ export function getPipelineAggOptions(targets) {
   _.each(targets.metrics, function(metric) {
     if (!isPipelineAgg(metric.type)) {
       result.push({ text: describeMetric(metric), value: metric.id });
+    }
+  });
+
+  return result;
+}
+
+export function getComplexPipelineOptions(metric) {
+  if (!this.isComplexPipelineAgg(metric.type)) {
+    return [];
+  }
+
+  return this.complexPipelineOptions[metric.type];
+}
+
+export function isComplexPipelineAgg(metricType) {
+  if (metricType) {
+    var po = this.complexPipelineOptions[metricType];
+    return po !== null && po !== undefined;
+  }
+
+  return false;
+}
+
+export function getComplexPipelineAggOptions(targets) {
+  var self = this;
+  var result = [];
+  _.each(targets.metrics, function(metric) {
+    if (!self.isComplexPipelineAgg(metric.type)) {
+      result.push({text: self.describeMetric(metric), value: metric.id });
     }
   });
 

@@ -162,16 +162,6 @@ function (angular, _, queryDef) {
           }
           break;
         }
-        case 'histogram': {
-          settings.interval = settings.interval || 1000;
-          settings.min_doc_count = _.defaultTo(settings.min_doc_count, 1);
-          settingsLinkText = 'Interval: ' + settings.interval;
-
-          if (settings.min_doc_count > 0) {
-            settingsLinkText += ', Min Doc Count: ' + settings.min_doc_count;
-          }
-          break;
-        }
         case 'geohash_grid': {
           // limit precision to 7
           settings.precision = Math.max(Math.min(settings.precision, 7), 1);
