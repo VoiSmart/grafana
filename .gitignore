@@ -53,3 +53,11 @@ debug.test
 
 # MacOS junk
 *.DS_Store
+
+/vendor/**/*.py
+/vendor/**/*.xml
+/vendor/**/*.yml
+/vendor/**/*_test.go
+/vendor/**/.editorconfig
+/vendor/**/appengine*
+*.orig

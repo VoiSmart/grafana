@@ -33,6 +33,7 @@ $input-border: 1px solid $input-border-color;
 
 .gf-form--has-input-icon {
   position: relative;
+  margin-right: $gf-form-margin;
 
   .gf-form-input-icon {
     position: absolute;
@@ -49,6 +50,11 @@ $input-border: 1px solid $input-border-color;
     &:focus + .gf-form-input-icon {
       color: $text-muted;
     }
+  }
+
+  .Select--multi .Select-multi-value-wrapper,
+  .Select-placeholder {
+    padding-left: 30px;
   }
 }
 
