@@ -380,6 +380,27 @@ kbn.valueFormats.short = kbn.formatBuilders.scaledUnits(1000, [
 kbn.valueFormats.dB = kbn.formatBuilders.fixedUnit('dB');
 kbn.valueFormats.ppm = kbn.formatBuilders.fixedUnit('ppm');
 
+kbn.valueFormats.nodecimals = function(value) {
+  if (value === null) {
+    return '';
+  }
+  return value.toFixed(0);
+};
+
+kbn.valueFormats.onedecimal = function(value) {
+  if (value === null) {
+    return '';
+  }
+  return value.toFixed(1);
+};
+
+kbn.valueFormats.twodecimals = function(value) {
+  if (value === null) {
+    return '';
+  }
+  return value.toFixed(2);
+};
+
 kbn.valueFormats.percent = function(size, decimals) {
   if (size === null) {
     return '';
@@ -794,6 +815,9 @@ kbn.getUnitFormats = function() {
       submenu: [
         { text: 'none', value: 'none' },
         { text: 'short', value: 'short' },
+        { text: 'no decimals', value: 'nodecimals' },
+        { text: 'one decimal', value: 'onedecimal' },
+        { text: 'two decimals', value: 'twodecimals' },
         { text: 'percent (0-100)', value: 'percent' },
         { text: 'percent (0.0-1.0)', value: 'percentunit' },
         { text: 'Humidity (%H)', value: 'humidity' },
